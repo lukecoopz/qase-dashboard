@@ -1,64 +1,80 @@
-# Quick Start Guide
+# Quick Start Guide - No Backend Server Needed! 🎉
 
 Your repository is now public at: **https://github.com/lukecoopz/qase-dashboard**
 
-## 🚀 Next Steps to Get It Live
+## 🚀 Deploy Everything to Vercel (One Command!)
 
-### Step 1: Deploy Backend to Vercel (5 minutes)
+Vercel will host both your frontend AND backend functions - no separate server needed!
 
-1. **Install Vercel CLI** (if you don't have it):
-   ```bash
-   npm i -g vercel
-   ```
+### Step 1: Install Vercel CLI
 
-2. **Login and Deploy**:
-   ```bash
-   cd /Users/lukecooper/Documents/Work/qase-dashboard
-   vercel login
-   vercel --prod
-   ```
+```bash
+npm i -g vercel
+```
 
-3. **Set Environment Variable** when prompted:
-   - `QASE_API_TOKEN`: Your Qase API token (from your `.env` file)
+### Step 2: Deploy to Vercel
 
-4. **Copy your Vercel URL** (e.g., `https://qase-dashboard-xyz.vercel.app`)
+```bash
+cd /Users/lukecooper/Documents/Work/qase-dashboard
+vercel login
+vercel --prod
+```
+
+### Step 3: Set Environment Variable
+
+When prompted, or after deployment:
+
+1. Go to your Vercel dashboard: https://vercel.com/dashboard
+2. Select your project
+3. Go to **Settings** → **Environment Variables**
+4. Add:
+   - **Key**: `QASE_API_TOKEN`
+   - **Value**: Your Qase API token (from your `.env` file)
+   - **Environment**: Production (and Preview if you want)
+5. Click **Save**
+6. Redeploy (or it will auto-redeploy)
+
+### Step 4: That's It! 🎉
+
+Your dashboard will be live at: `https://qase-dashboard-xyz.vercel.app`
+
+The API functions are automatically available at `/api/*` on the same domain.
+
+## 🔄 Alternative: GitHub Pages + Vercel Functions
+
+If you prefer GitHub Pages for the frontend:
+
+### Step 1: Deploy Functions to Vercel (as above)
 
 ### Step 2: Configure GitHub Pages Secret
 
 1. Go to: https://github.com/lukecoopz/qase-dashboard/settings/secrets/actions
-2. Click **"New repository secret"**
-3. Add:
+2. Add secret:
    - **Name**: `VITE_API_BASE_URL`
-   - **Value**: `https://your-vercel-app.vercel.app/api` (replace with your actual Vercel URL)
+   - **Value**: `https://your-vercel-app.vercel.app/api`
 
 ### Step 3: Enable GitHub Pages
 
 1. Go to: https://github.com/lukecoopz/qase-dashboard/settings/pages
-2. Under **"Source"**, select:
-   - **Deploy from a branch**: `main`
-   - **Branch**: `main` / `root`
+2. Source: Deploy from branch `main` / `root`
 3. Click **Save**
 
-### Step 4: Wait for Deployment
+Your dashboard will be at: **https://lukecoopz.github.io/qase-dashboard/**
 
-- GitHub Actions will automatically build and deploy (check Actions tab)
-- Your dashboard will be live at: **https://lukecoopz.github.io/qase-dashboard/**
+## ✅ Benefits of This Approach
 
-## ✅ That's It!
-
-Once both are deployed:
-- **Frontend**: https://lukecoopz.github.io/qase-dashboard/
-- **Backend**: Your Vercel URL
-
-The dashboard will automatically connect to your backend API!
+- ✅ **No backend server to maintain** - Functions run on-demand
+- ✅ **Free tier** - Vercel has generous free limits
+- ✅ **Automatic HTTPS** - Secure by default
+- ✅ **Easy updates** - Just push to GitHub, Vercel auto-deploys
+- ✅ **API token stays secure** - Never exposed to client
 
 ## 🔧 Troubleshooting
 
-**Frontend shows errors?**
-- Check GitHub Actions logs: https://github.com/lukecoopz/qase-dashboard/actions
-- Verify `VITE_API_BASE_URL` secret is set correctly
-
-**Backend not working?**
-- Check Vercel dashboard: https://vercel.com/dashboard
+**Functions return 500 errors?**
+- Check Vercel dashboard → Functions → Logs
 - Verify `QASE_API_TOKEN` environment variable is set
 
+**Frontend can't connect?**
+- Check browser console for CORS errors
+- Verify API routes are accessible: `https://your-app.vercel.app/api/case/MA`

@@ -7,9 +7,23 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-// Use environment variable for API base, fallback to localhost for development
-const PROXY_API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3001/api";
+// Detect API base URL:
+// - If VITE_API_BASE_URL is set, use it (for GitHub Pages with separate backend)
+// - If on Vercel (same origin), use relative path
+// - Otherwise, use localhost for development
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  // If we're on Vercel, API routes are on the same domain
+  if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('vercel.com')) {
+    return '/api';
+  }
+  // Local development
+  return 'http://localhost:3001/api';
+};
+
+const PROXY_API_BASE = getApiBase();
 const PROJECT_CODE = "MA";
 
 async function fetchQase<T>(endpoint: string): Promise<T> {

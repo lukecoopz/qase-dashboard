@@ -54,49 +54,33 @@ This creates a `dist` folder with static files ready for deployment.
 
 ## Deployment
 
+### 🚀 Easy Deployment with Vercel (Recommended - No Backend Server!)
+
+**Deploy everything in one command** - Vercel handles both frontend and backend functions:
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
+```
+
+Then set the `QASE_API_TOKEN` environment variable in Vercel dashboard.
+
+**That's it!** Your dashboard will be live with API functions automatically available.
+
+See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
+
+### Alternative: GitHub Pages + Vercel Functions
+
+If you prefer GitHub Pages for the frontend:
+
+1. Deploy functions to Vercel (as above)
+2. Set `VITE_API_BASE_URL` secret in GitHub Actions to your Vercel API URL
+3. Enable GitHub Pages in repository settings
+
 ### ⚠️ Important Security Notes
 
-**This project requires a backend proxy server** to keep your Qase API token secure. The token must **never** be exposed in client-side code.
-
-### Deployment Options
-
-#### Option 1: GitHub Pages (Static Frontend Only)
-
-**Requirements:**
-- You must host the backend proxy server separately (see Option 2)
-- Update the frontend to point to your hosted backend URL
-
-**Steps:**
-
-1. **Host the backend proxy server** on a platform like:
-   - [Vercel](https://vercel.com) (recommended - free tier available)
-   - [Railway](https://railway.app) (free tier available)
-   - [Render](https://render.com) (free tier available)
-   - [Fly.io](https://fly.io) (free tier available)
-
-2. **Set environment variable** `VITE_API_BASE_URL` in your GitHub Pages build:
-   - Create `.env.production` file with: `VITE_API_BASE_URL=https://your-backend-url.com/api`
-   - Or set it in your CI/CD pipeline
-
-3. **Deploy frontend to GitHub Pages:**
-   ```bash
-   npm run build
-   # Deploy the dist folder to GitHub Pages
-   ```
-
-#### Option 2: Full Stack Deployment (Recommended)
-
-Deploy both frontend and backend together:
-
-- **Vercel**: Can host both with serverless functions
-- **Railway**: Full-stack deployment support
-- **Render**: Supports both frontend and backend
-
-**Backend Environment Variables:**
-- `QASE_API_TOKEN`: Your Qase API token (set in hosting platform's environment variables)
-
-**Frontend Environment Variables:**
-- `VITE_API_BASE_URL`: Your backend API URL (e.g., `https://your-app.vercel.app/api`)
+**The API token must never be exposed in client-side code.** The serverless functions keep your token secure on the server side.
 
 ### Making the Repository Public
 

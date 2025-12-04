@@ -54,26 +54,50 @@ This creates a `dist` folder with static files ready for deployment.
 
 ## Deployment
 
-### 🚀 Deploy to GitHub Pages
+### 🚀 Deploy to GitHub Pages with GitHub Secret
 
-**Everything runs in the browser** - no servers, no backend, just GitHub Pages!
+**Use your GitHub repository secret `QASE_API_TOKEN`** - no need to login in the browser!
 
-#### Step 1: Set Up CORS Proxy (Required)
+#### Step 1: Deploy Proxy Server (One-Time Setup)
 
-Due to CORS restrictions, you need to deploy a simple Cloudflare Worker proxy:
+Deploy the proxy server to any free Node.js hosting service:
 
-1. **Go to Cloudflare Workers**: https://workers.cloudflare.com/
-2. **Sign up/Login** (free tier available)
-3. **Create a new Worker**
-4. **Copy the code from `cloudflare-worker.js`** and paste it into the editor
-5. **Deploy** and copy your Worker URL (e.g., `https://qase-proxy.your-subdomain.workers.dev`)
+**Option A: Render (Recommended - Easiest)**
+1. Go to: https://render.com
+2. Sign up (free tier available)
+3. Click "New +" → "Web Service"
+4. Connect your GitHub repository
+5. Configure:
+   - **Name**: `qase-proxy`
+   - **Root Directory**: Leave empty (or create a subdirectory)
+   - **Environment**: Node
+   - **Build Command**: `cd proxy && npm install` (if using subdirectory) or `npm install --prefix .` 
+   - **Start Command**: `node proxy-server.js`
+6. Add environment variable:
+   - **Key**: `QASE_API_TOKEN`
+   - **Value**: Your Qase API token (or use GitHub secret via Render's GitHub integration)
+7. Deploy and copy your service URL (e.g., `https://qase-proxy.onrender.com`)
 
-#### Step 2: Configure GitHub Pages
+**Option B: Railway**
+1. Go to: https://railway.app
+2. New Project → Deploy from GitHub
+3. Select your repository
+4. Add environment variable: `QASE_API_TOKEN` = your token
+5. Set start command: `node proxy-server.js`
+6. Deploy and copy URL
+
+**Option C: Fly.io**
+1. Install Fly CLI: `curl -L https://fly.io/install.sh | sh`
+2. Run: `fly launch`
+3. Add secret: `fly secrets set QASE_API_TOKEN=your_token`
+4. Deploy: `fly deploy`
+
+#### Step 2: Configure GitHub Secrets
 
 1. **Go to GitHub repository settings** → **Secrets and variables** → **Actions**
-2. **Add a new secret**:
-   - Name: `VITE_CORS_PROXY_URL`
-   - Value: Your Cloudflare Worker URL (from Step 1)
+2. **Add secrets**:
+   - `QASE_API_TOKEN`: Your Qase API token
+   - `VITE_PROXY_BASE_URL`: Your proxy server URL (from Step 1)
 
 #### Step 3: Enable GitHub Pages
 
@@ -83,15 +107,16 @@ Due to CORS restrictions, you need to deploy a simple Cloudflare Worker proxy:
 
 #### Step 4: Deploy
 
-Push to main branch - GitHub Actions will auto-deploy!
+Push to main branch - GitHub Actions will auto-deploy with the proxy URL!
 
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
 ### ⚠️ Important Notes
 
-- **CORS Proxy Required**: The Cloudflare Worker proxy is needed to bypass CORS restrictions
-- **Token Security**: Your API token is stored in browser localStorage and sent through the proxy to Qase API
-- **Free Tier**: Cloudflare Workers free tier includes 100,000 requests/day (more than enough for personal use)
+- **No Login Required**: When proxy is configured, users don't need to login - token comes from GitHub secret
+- **CORS Proxy Required**: The proxy server bypasses CORS restrictions
+- **Free Tier**: Render/Railway/Fly.io all have free tiers (more than enough for personal use)
+- **Token Security**: Token is stored in GitHub secrets and proxy server, never exposed to browser
 
 ### Making the Repository Public
 

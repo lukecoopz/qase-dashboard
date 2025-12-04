@@ -1,0 +1,46 @@
+name: Deploy Proxy Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'proxy-server.js'
+      - 'proxy-package.json'
+
+jobs:
+  deploy-proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd $(mktemp -d)
+          cp ${{ github.workspace }}/proxy-package.json ./package.json
+          npm install
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+        run: |
+          echo "To deploy to Render:"
+          echo "1. Go to https://render.com"
+          echo "2. Create a new Web Service"
+          echo "3. Connect your GitHub repository"
+          echo "4. Set root directory to repository root"
+          echo "5. Set build command: npm install (in proxy directory)"
+          echo "6. Set start command: node proxy-server.js"
+          echo "7. Add environment variable: QASE_API_TOKEN=${{ secrets.QASE_API_TOKEN }}"
+          echo ""
+          echo "Or use Railway, Fly.io, or any Node.js hosting service"
+

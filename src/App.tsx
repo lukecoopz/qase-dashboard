@@ -15,9 +15,11 @@ function App() {
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check if proxy is configured (no login needed) or if user is already logged in
+    const proxyConfigured = import.meta.env.VITE_PROXY_BASE_URL;
     const token = localStorage.getItem('qase_api_token');
-    if (token) {
+    
+    if (proxyConfigured || token) {
       setIsAuthenticated(true);
       if (!hasLoadedRef.current) {
         loadData();

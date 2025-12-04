@@ -1,24 +1,43 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
 import { getAllTestCases, getAllTestSuites } from './services/qaseApi';
 import type { TestCase, TestSuite } from './types';
 import './App.css';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [suites, setSuites] = useState<TestSuite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isLoadingRef = useRef(false);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    // Only load on initial mount, not on re-renders
-    if (!hasLoadedRef.current) {
-      loadData();
-      hasLoadedRef.current = true;
+    // Check if user is already logged in
+    const token = localStorage.getItem('qase_api_token');
+    if (token) {
+      setIsAuthenticated(true);
+      if (!hasLoadedRef.current) {
+        loadData();
+        hasLoadedRef.current = true;
+      }
     }
   }, []);
+
+  const handleLogin = (token: string) => {
+    setIsAuthenticated(true);
+    loadData();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('qase_api_token');
+    setIsAuthenticated(false);
+    setTestCases([]);
+    setSuites([]);
+    hasLoadedRef.current = false;
+  };
 
   const loadData = async () => {
     // Prevent multiple simultaneous API calls
@@ -54,6 +73,10 @@ function App() {
     }
   };
 
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app">
       <div className="app-header">
@@ -61,6 +84,9 @@ function App() {
         <div className="suite-input-container">
           <button onClick={loadData} className="refresh-button">
             Refresh
+          </button>
+          <button onClick={handleLogout} className="logout-button">
+            Logout
           </button>
         </div>
       </div>

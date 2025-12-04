@@ -30,6 +30,23 @@
   justify-content: center;
 }
 
+.logout-button {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 85, 85, 0.2);
+  border: 1px solid rgba(255, 85, 85, 0.4);
+  border-radius: 8px;
+  color: #FF5555;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-button:hover {
+  background: rgba(255, 85, 85, 0.3);
+  border-color: rgba(255, 85, 85, 0.6);
+}
+
 .suite-input-container label {
   font-size: 1rem;
   color: #F8F8F2;

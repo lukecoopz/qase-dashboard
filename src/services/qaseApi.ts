@@ -7,33 +7,33 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-// Detect API base URL:
-// - If VITE_API_BASE_URL is set, use it (for GitHub Pages with separate backend)
-// - If on Vercel (same origin), use relative path
-// - Otherwise, use localhost for development
-const getApiBase = () => {
-  if (import.meta.env.VITE_API_BASE_URL) {
-    return import.meta.env.VITE_API_BASE_URL;
-  }
-  // If we're on Vercel, API routes are on the same domain
-  if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('vercel.com')) {
-    return '/api';
-  }
-  // Local development
-  return 'http://localhost:3001/api';
-};
-
-const PROXY_API_BASE = getApiBase();
+const QASE_API_BASE = "https://api.qase.io/v1";
 const PROJECT_CODE = "MA";
 
+function getApiToken(): string {
+  const token = localStorage.getItem("qase_api_token");
+  if (!token) {
+    throw new Error("No API token found. Please login first.");
+  }
+  return token;
+}
+
 async function fetchQase<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${PROXY_API_BASE}${endpoint}`, {
+  const token = getApiToken();
+  
+  const response = await fetch(`${QASE_API_BASE}${endpoint}`, {
     headers: {
+      Token: token,
       "Content-Type": "application/json",
     },
   });
 
   if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      // Token is invalid, clear it
+      localStorage.removeItem("qase_api_token");
+      throw new Error("Invalid API token. Please login again.");
+    }
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
 

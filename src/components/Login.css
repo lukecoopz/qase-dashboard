@@ -1,0 +1,142 @@
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #282A36 0%, #1E1F29 100%);
+  padding: 2rem;
+}
+
+.login-card {
+  background: rgba(40, 42, 54, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(139, 233, 253, 0.2);
+  border-radius: 16px;
+  padding: 3rem;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.login-card h1 {
+  color: #8BE9FD;
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.login-subtitle {
+  color: #6272A4;
+  text-align: center;
+  margin: 0 0 2rem 0;
+  font-size: 0.95rem;
+}
+
+.login-form {
+  margin-bottom: 2rem;
+}
+
+.login-input-group {
+  margin-bottom: 1.5rem;
+}
+
+.login-input-group label {
+  display: block;
+  color: #F8F8F2;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.login-input-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(40, 42, 54, 0.6);
+  border: 1px solid rgba(139, 233, 253, 0.3);
+  border-radius: 8px;
+  color: #F8F8F2;
+  font-size: 1rem;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.login-input-group input:focus {
+  outline: none;
+  border-color: #8BE9FD;
+  box-shadow: 0 0 0 3px rgba(139, 233, 253, 0.1);
+}
+
+.login-input-group input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-input-group small {
+  display: block;
+  color: #6272A4;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.login-error {
+  background: rgba(255, 85, 85, 0.2);
+  border: 1px solid rgba(255, 85, 85, 0.4);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #FF5555;
+  font-size: 0.9rem;
+}
+
+.login-button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #8BE9FD 0%, #50FA7B 100%);
+  border: none;
+  border-radius: 8px;
+  color: #282A36;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 233, 253, 0.4);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-help {
+  border-top: 1px solid rgba(139, 233, 253, 0.2);
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.login-help p {
+  color: #F8F8F2;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+}
+
+.login-help ol {
+  color: #6272A4;
+  margin: 0;
+  padding-left: 1.5rem;
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+
+.login-help a {
+  color: #8BE9FD;
+  text-decoration: none;
+}
+
+.login-help a:hover {
+  text-decoration: underline;
+}
+

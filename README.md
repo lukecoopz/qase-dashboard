@@ -54,33 +54,23 @@ This creates a `dist` folder with static files ready for deployment.
 
 ## Deployment
 
-### 🚀 Easy Deployment with Vercel (Recommended - No Backend Server!)
+### 🚀 Deploy to GitHub Pages (No Backend Needed!)
 
-**Deploy everything in one command** - Vercel handles both frontend and backend functions:
+**Everything runs in the browser** - no servers, no backend, just GitHub Pages!
 
-```bash
-npm i -g vercel
-vercel login
-vercel --prod
-```
+1. **Enable GitHub Pages** in repository settings
+2. **Push to main branch** - GitHub Actions will auto-deploy
+3. **Login with your Qase API token** when you visit the dashboard
 
-Then set the `QASE_API_TOKEN` environment variable in Vercel dashboard.
-
-**That's it!** Your dashboard will be live with API functions automatically available.
+Your token is stored locally in your browser and never sent anywhere except Qase API.
 
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
-### Alternative: GitHub Pages + Vercel Functions
+### ⚠️ Important Notes
 
-If you prefer GitHub Pages for the frontend:
-
-1. Deploy functions to Vercel (as above)
-2. Set `VITE_API_BASE_URL` secret in GitHub Actions to your Vercel API URL
-3. Enable GitHub Pages in repository settings
-
-### ⚠️ Important Security Notes
-
-**The API token must never be exposed in client-side code.** The serverless functions keep your token secure on the server side.
+- **CORS**: If Qase API doesn't allow direct browser access, you may encounter CORS errors. Check browser console for details.
+- **Token Security**: Your API token is stored in browser localStorage. Clear browser data to remove it.
+- **No Backend**: This is a pure client-side application - all API calls are made directly from your browser.
 
 ### Making the Repository Public
 

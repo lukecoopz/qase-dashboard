@@ -7,30 +7,17 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-const QASE_API_BASE = "https://api.qase.io/v1";
+const PROXY_API_BASE = "http://localhost:3001/api";
 const PROJECT_CODE = "MA";
 
-// Proxy URL - set via environment variable during build from GitHub secret
-// Token comes from GitHub secret QASE_API_TOKEN via the proxy server
-const PROXY_BASE_URL = import.meta.env.VITE_PROXY_BASE_URL || "";
-
 async function fetchQase<T>(endpoint: string): Promise<T> {
-  if (!PROXY_BASE_URL) {
-    throw new Error(
-      "Proxy server not configured. Please set VITE_PROXY_BASE_URL in GitHub secrets."
-    );
-  }
-
-  // Use proxy server (token is handled server-side via GitHub secret)
-  const proxyUrl = `${PROXY_BASE_URL}/api${endpoint}`;
-  const response = await fetch(proxyUrl);
+  const response = await fetch(`${PROXY_API_BASE}${endpoint}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
   if (!response.ok) {
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(
-        "Invalid API token. Please check your GitHub secret QASE_API_TOKEN."
-      );
-    }
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }
 

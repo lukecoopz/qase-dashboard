@@ -34,6 +34,7 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: '/qase-dashboard/'
+          VITE_CORS_PROXY_URL: ${{ secrets.VITE_CORS_PROXY_URL }}
         run: npm run build
 
       - name: Setup Pages

@@ -54,23 +54,44 @@ This creates a `dist` folder with static files ready for deployment.
 
 ## Deployment
 
-### 🚀 Deploy to GitHub Pages (No Backend Needed!)
+### 🚀 Deploy to GitHub Pages
 
 **Everything runs in the browser** - no servers, no backend, just GitHub Pages!
 
-1. **Enable GitHub Pages** in repository settings
-2. **Push to main branch** - GitHub Actions will auto-deploy
-3. **Login with your Qase API token** when you visit the dashboard
+#### Step 1: Set Up CORS Proxy (Required)
 
-Your token is stored locally in your browser and never sent anywhere except Qase API.
+Due to CORS restrictions, you need to deploy a simple Cloudflare Worker proxy:
+
+1. **Go to Cloudflare Workers**: https://workers.cloudflare.com/
+2. **Sign up/Login** (free tier available)
+3. **Create a new Worker**
+4. **Copy the code from `cloudflare-worker.js`** and paste it into the editor
+5. **Deploy** and copy your Worker URL (e.g., `https://qase-proxy.your-subdomain.workers.dev`)
+
+#### Step 2: Configure GitHub Pages
+
+1. **Go to GitHub repository settings** → **Secrets and variables** → **Actions**
+2. **Add a new secret**:
+   - Name: `VITE_CORS_PROXY_URL`
+   - Value: Your Cloudflare Worker URL (from Step 1)
+
+#### Step 3: Enable GitHub Pages
+
+1. **Go to repository settings** → **Pages**
+2. **Source**: Deploy from branch `main` / `root`
+3. **Click Save**
+
+#### Step 4: Deploy
+
+Push to main branch - GitHub Actions will auto-deploy!
 
 See [QUICK_START.md](./QUICK_START.md) for detailed instructions.
 
 ### ⚠️ Important Notes
 
-- **CORS**: If Qase API doesn't allow direct browser access, you may encounter CORS errors. Check browser console for details.
-- **Token Security**: Your API token is stored in browser localStorage. Clear browser data to remove it.
-- **No Backend**: This is a pure client-side application - all API calls are made directly from your browser.
+- **CORS Proxy Required**: The Cloudflare Worker proxy is needed to bypass CORS restrictions
+- **Token Security**: Your API token is stored in browser localStorage and sent through the proxy to Qase API
+- **Free Tier**: Cloudflare Workers free tier includes 100,000 requests/day (more than enough for personal use)
 
 ### Making the Repository Public
 

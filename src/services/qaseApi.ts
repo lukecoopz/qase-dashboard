@@ -10,6 +10,10 @@ import type {
 const QASE_API_BASE = "https://api.qase.io/v1";
 const PROJECT_CODE = "MA";
 
+// CORS proxy URL - set via environment variable or use default Cloudflare Worker
+// User can deploy cloudflare-worker.js to their own Cloudflare Worker
+const CORS_PROXY = import.meta.env.VITE_CORS_PROXY_URL || "";
+
 function getApiToken(): string {
   const token = localStorage.getItem("qase_api_token");
   if (!token) {
@@ -20,13 +24,33 @@ function getApiToken(): string {
 
 async function fetchQase<T>(endpoint: string): Promise<T> {
   const token = getApiToken();
-  
-  const response = await fetch(`${QASE_API_BASE}${endpoint}`, {
-    headers: {
-      Token: token,
-      "Content-Type": "application/json",
-    },
-  });
+  const targetUrl = `${QASE_API_BASE}${endpoint}`;
+
+  let response: Response;
+
+  if (CORS_PROXY) {
+    // Use CORS proxy (Cloudflare Worker)
+    const proxyUrl = `${CORS_PROXY}?url=${encodeURIComponent(targetUrl)}&token=${encodeURIComponent(token)}`;
+    response = await fetch(proxyUrl);
+  } else {
+    // Try direct call first (will fail if CORS is blocked)
+    try {
+      response = await fetch(targetUrl, {
+        headers: {
+          Token: token,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      // If CORS error, throw a helpful message
+      if (error instanceof TypeError && error.message.includes("CORS")) {
+        throw new Error(
+          "CORS error: Please set up a CORS proxy. See README.md for instructions on deploying the Cloudflare Worker."
+        );
+      }
+      throw error;
+    }
+  }
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {

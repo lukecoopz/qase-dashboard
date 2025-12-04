@@ -1,45 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
-import Login from './components/Login';
 import { getAllTestCases, getAllTestSuites } from './services/qaseApi';
 import type { TestCase, TestSuite } from './types';
 import './App.css';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [suites, setSuites] = useState<TestSuite[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isLoadingRef = useRef(false);
   const hasLoadedRef = useRef(false);
 
   useEffect(() => {
-    // Check if proxy is configured (no login needed) or if user is already logged in
-    const proxyConfigured = import.meta.env.VITE_PROXY_BASE_URL;
-    const token = localStorage.getItem('qase_api_token');
-    
-    if (proxyConfigured || token) {
-      setIsAuthenticated(true);
-      if (!hasLoadedRef.current) {
-        loadData();
-        hasLoadedRef.current = true;
-      }
+    // Always load data on mount - token comes from GitHub secret via proxy
+    if (!hasLoadedRef.current) {
+      loadData();
+      hasLoadedRef.current = true;
     }
   }, []);
-
-  const handleLogin = (token: string) => {
-    setIsAuthenticated(true);
-    loadData();
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('qase_api_token');
-    setIsAuthenticated(false);
-    setTestCases([]);
-    setSuites([]);
-    hasLoadedRef.current = false;
-  };
 
   const loadData = async () => {
     // Prevent multiple simultaneous API calls
@@ -79,6 +58,34 @@ function App() {
     return <Login onLogin={handleLogin} />;
   }
 
+  // Check if proxy is configured
+  const proxyConfigured = import.meta.env.VITE_PROXY_BASE_URL;
+
+  if (!proxyConfigured) {
+    return (
+      <div className="app">
+        <div className="error-container" style={{ maxWidth: '800px', margin: '4rem auto' }}>
+          <h2 style={{ color: '#FF5555', marginBottom: '1rem' }}>⚠️ Proxy Server Not Configured</h2>
+          <p style={{ color: '#F8F8F2', marginBottom: '1.5rem' }}>
+            The proxy server URL is not configured. Please set up the proxy server and add <code style={{ background: 'rgba(139, 233, 253, 0.2)', padding: '0.2rem 0.4rem', borderRadius: '4px' }}>VITE_PROXY_BASE_URL</code> as a GitHub secret.
+          </p>
+          <div style={{ background: 'rgba(139, 233, 253, 0.1)', padding: '1.5rem', borderRadius: '8px', border: '1px solid rgba(139, 233, 253, 0.2)' }}>
+            <h3 style={{ color: '#8BE9FD', marginTop: 0 }}>Setup Instructions:</h3>
+            <ol style={{ color: '#F8F8F2', lineHeight: '1.8' }}>
+              <li>Deploy the proxy server (see <code>proxy-server.js</code>) to Render, Railway, or Fly.io</li>
+              <li>Set <code>QASE_API_TOKEN</code> environment variable on your hosting service</li>
+              <li>Add <code>VITE_PROXY_BASE_URL</code> as a GitHub secret pointing to your proxy URL</li>
+              <li>Redeploy GitHub Pages</li>
+            </ol>
+            <p style={{ color: '#6272A4', marginTop: '1rem', fontSize: '0.9rem' }}>
+              See <code>QUICK_START.md</code> for detailed instructions.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <div className="app-header">
@@ -86,9 +93,6 @@ function App() {
         <div className="suite-input-container">
           <button onClick={loadData} className="refresh-button">
             Refresh
-          </button>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
           </button>
         </div>
       </div>

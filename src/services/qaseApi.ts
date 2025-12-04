@@ -10,57 +10,26 @@ import type {
 const QASE_API_BASE = "https://api.qase.io/v1";
 const PROJECT_CODE = "MA";
 
-// Proxy URL - set via environment variable during build
-// If set, all requests go through the proxy (which has the token from GitHub secret)
-// If not set, user must login and token is stored in localStorage
+// Proxy URL - set via environment variable during build from GitHub secret
+// Token comes from GitHub secret QASE_API_TOKEN via the proxy server
 const PROXY_BASE_URL = import.meta.env.VITE_PROXY_BASE_URL || "";
 
-function getApiToken(): string {
-  const token = localStorage.getItem("qase_api_token");
-  if (!token) {
-    throw new Error("No API token found. Please login first.");
-  }
-  return token;
-}
-
 async function fetchQase<T>(endpoint: string): Promise<T> {
-  let response: Response;
-
-  if (PROXY_BASE_URL) {
-    // Use proxy server (token is handled server-side via GitHub secret)
-    // No token needed from localStorage
-    const proxyUrl = `${PROXY_BASE_URL}/api${endpoint}`;
-    response = await fetch(proxyUrl);
-  } else {
-    // Direct call with token from localStorage (fallback for local dev)
-    const token = getApiToken();
-    const targetUrl = `${QASE_API_BASE}${endpoint}`;
-    
-    try {
-      response = await fetch(targetUrl, {
-        headers: {
-          Token: token,
-          "Content-Type": "application/json",
-        },
-      });
-    } catch (error) {
-      // If CORS error, throw a helpful message
-      if (error instanceof TypeError && error.message.includes("CORS")) {
-        throw new Error(
-          "CORS error: Please configure a proxy server. See README.md for setup instructions."
-        );
-      }
-      throw error;
-    }
+  if (!PROXY_BASE_URL) {
+    throw new Error(
+      "Proxy server not configured. Please set VITE_PROXY_BASE_URL in GitHub secrets."
+    );
   }
+
+  // Use proxy server (token is handled server-side via GitHub secret)
+  const proxyUrl = `${PROXY_BASE_URL}/api${endpoint}`;
+  const response = await fetch(proxyUrl);
 
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) {
-      // Token is invalid, clear it (if using localStorage)
-      if (!PROXY_BASE_URL) {
-        localStorage.removeItem("qase_api_token");
-      }
-      throw new Error("Invalid API token. Please check your GitHub secret or login again.");
+      throw new Error(
+        "Invalid API token. Please check your GitHub secret QASE_API_TOKEN."
+      );
     }
     throw new Error(`API error: ${response.status} ${response.statusText}`);
   }

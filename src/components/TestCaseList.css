@@ -1,0 +1,321 @@
+.test-case-list {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: rgba(40, 42, 54, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 233, 253, 0.2);
+}
+
+.test-case-list-title {
+  color: #8BE9FD;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.test-case-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.test-case-empty {
+  color: #6272A4;
+  text-align: center;
+  padding: 2rem;
+  font-style: italic;
+}
+
+.test-case-item {
+  background: rgba(50, 52, 64, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(139, 233, 253, 0.1);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.test-case-item:hover {
+  border-color: rgba(139, 233, 253, 0.3);
+  background: rgba(50, 52, 64, 0.8);
+}
+
+.test-case-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease;
+}
+
+.test-case-header:hover {
+  background: rgba(139, 233, 253, 0.05);
+}
+
+.test-case-header.expanded {
+  border-bottom: 1px solid rgba(139, 233, 253, 0.1);
+}
+
+.test-case-expand-icon {
+  color: #8BE9FD;
+  font-size: 0.875rem;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.test-case-title {
+  flex: 1;
+  color: #F8F8F2;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.test-case-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.test-case-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.test-case-badge.automated {
+  background: rgba(80, 250, 123, 0.2);
+  color: #50FA7B;
+  border: 1px solid rgba(80, 250, 123, 0.3);
+}
+
+.test-case-badge.manual {
+  background: rgba(255, 184, 108, 0.2);
+  color: #FFB86C;
+  border: 1px solid rgba(255, 184, 108, 0.3);
+}
+
+.test-case-details {
+  padding: 1.25rem;
+  background: rgba(40, 42, 54, 0.4);
+}
+
+.test-case-loading,
+.test-case-error,
+.test-case-no-details {
+  color: #6272A4;
+  text-align: center;
+  padding: 1rem;
+  font-style: italic;
+}
+
+.test-case-error {
+  color: #FF5555;
+}
+
+.test-case-section {
+  margin-bottom: 1.5rem;
+}
+
+.test-case-section:last-child {
+  margin-bottom: 0;
+}
+
+.test-case-section-title {
+  color: #BD93F9;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+}
+
+.test-case-section-content {
+  color: #F8F8F2;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.test-case-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.test-case-step {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(50, 52, 64, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid #8BE9FD;
+}
+
+.test-case-step-number {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 233, 253, 0.2);
+  color: #8BE9FD;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.test-case-step-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.test-case-step-action,
+.test-case-step-expected,
+.test-case-step-data {
+  color: #F8F8F2;
+  line-height: 1.6;
+}
+
+.test-case-step-action strong,
+.test-case-step-expected strong,
+.test-case-step-data strong {
+  color: #BD93F9;
+  margin-right: 0.5rem;
+}
+
+.test-case-step-expected {
+  color: #50FA7B;
+}
+
+.test-case-step-data {
+  color: #FFB86C;
+  font-size: 0.875rem;
+}
+
+/* Gherkin format styles */
+.test-case-step-gherkin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(50, 52, 64, 0.6);
+  border-radius: 6px;
+  border-left: 3px solid #BD93F9;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
+.test-case-gherkin-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  line-height: 1.8;
+  color: #F8F8F2;
+}
+
+.test-case-gherkin-keyword {
+  font-weight: 700;
+  text-transform: capitalize;
+  min-width: 4.5rem;
+  flex-shrink: 0;
+}
+
+/* Color coding for Gherkin keywords */
+.test-case-gherkin-step:has(.test-case-gherkin-keyword:first-child) .test-case-gherkin-keyword {
+  color: #8BE9FD; /* Given - light blue */
+}
+
+.test-case-gherkin-step:has(.test-case-gherkin-keyword:first-child:contains("When")) .test-case-gherkin-keyword,
+.test-case-gherkin-step .test-case-gherkin-keyword:first-child {
+  color: #8BE9FD; /* Default - light blue */
+}
+
+/* Specific keyword colors using attribute selectors where possible */
+.test-case-gherkin-step .test-case-gherkin-keyword {
+  color: #8BE9FD; /* Given - light blue */
+}
+
+/* We'll use JavaScript to add data attributes for better keyword detection */
+.test-case-gherkin-keyword[data-keyword="Given"] {
+  color: #8BE9FD; /* Given - light blue */
+}
+
+.test-case-gherkin-keyword[data-keyword="When"] {
+  color: #50FA7B; /* When - green */
+}
+
+.test-case-gherkin-keyword[data-keyword="Then"] {
+  color: #FF79C6; /* Then - pink */
+}
+
+.test-case-gherkin-keyword[data-keyword="And"] {
+  color: #FFB86C; /* And - orange */
+}
+
+.test-case-gherkin-keyword[data-keyword="But"] {
+  color: #FF5555; /* But - red */
+}
+
+.test-case-gherkin-text {
+  flex: 1;
+  color: #F8F8F2;
+}
+
+/* Suite grouping styles */
+.test-case-suite-group {
+  margin-bottom: 1rem;
+  background: rgba(50, 52, 64, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(139, 233, 253, 0.1);
+  overflow: hidden;
+}
+
+.test-case-suite-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(40, 42, 54, 0.6);
+  transition: background 0.2s ease;
+  border-bottom: 1px solid rgba(139, 233, 253, 0.1);
+}
+
+.test-case-suite-header:hover {
+  background: rgba(40, 42, 54, 0.8);
+}
+
+.test-case-suite-expand-icon {
+  color: #8BE9FD;
+  font-size: 0.875rem;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.test-case-suite-title {
+  flex: 1;
+  color: #BD93F9;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.test-case-suite-count {
+  color: #6272A4;
+  font-size: 0.875rem;
+}
+
+.test-case-suite-content {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+

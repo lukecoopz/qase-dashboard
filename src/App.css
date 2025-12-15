@@ -405,6 +405,216 @@
   gap: 1.5rem;
 }
 
+/* --- Automation overview widget (horizontal KPI row + pie) --- */
+.overview-widget {
+  display: flex;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.overview-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.overview-kpi {
+  position: relative;
+  background: rgba(68, 71, 90, 0.25);
+  backdrop-filter: blur(18px);
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(139, 233, 253, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.overview-kpi::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  pointer-events: none;
+}
+
+.overview-kpi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 0 18px color-mix(in srgb, var(--accent, #8BE9FD) 35%, transparent);
+  pointer-events: none;
+}
+
+.overview-kpi-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.overview-kpi-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent, #8BE9FD) 18%, rgba(40, 42, 54, 0.8));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent, #8BE9FD) 25%, transparent);
+  font-size: 1rem;
+}
+
+.overview-kpi-title {
+  color: #6272A4;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.overview-kpi-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #F8F8F2;
+  line-height: 1.05;
+  margin-bottom: 0.35rem;
+}
+
+.overview-kpi-subtitle {
+  color: color-mix(in srgb, var(--accent, #8BE9FD) 65%, #6272A4);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.overview-pie-card {
+  width: 360px;
+  max-width: 40vw;
+  background: rgba(68, 71, 90, 0.25);
+  backdrop-filter: blur(18px);
+  border-radius: 16px;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(139, 233, 253, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.overview-pie-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.overview-pie-title {
+  color: #F8F8F2;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.overview-pie-total {
+  color: #6272A4;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.overview-pie-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overview-pie {
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  position: relative;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 0 22px rgba(80, 250, 123, 0.18),
+    0 0 22px rgba(255, 184, 108, 0.14);
+}
+
+.overview-pie-center {
+  position: absolute;
+  inset: 14px;
+  border-radius: 999px;
+  background: rgba(40, 42, 54, 0.85);
+  border: 1px solid rgba(139, 233, 253, 0.14);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.overview-pie-center-value {
+  color: #F8F8F2;
+  font-weight: 900;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.overview-pie-center-label {
+  color: #6272A4;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+
+.overview-pie-legend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.overview-legend-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.overview-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.overview-legend-label {
+  color: #F8F8F2;
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overview-legend-value {
+  color: #F8F8F2;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.overview-legend-muted {
+  color: #6272A4;
+  font-weight: 700;
+}
+
 .stat-card {
   background: rgba(68, 71, 90, 0.3);
   backdrop-filter: blur(20px);
@@ -548,6 +758,19 @@
 
   .charts-grid {
     grid-template-columns: 1fr;
+  }
+
+  .overview-widget {
+    flex-direction: column;
+  }
+
+  .overview-kpis {
+    grid-template-columns: repeat(2, minmax(150px, 1fr));
+  }
+
+  .overview-pie-card {
+    width: 100%;
+    max-width: none;
   }
 
   .suite-input-container {

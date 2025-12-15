@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { TestSuite, TestCase, SuiteTreeNode } from '../types';
 import { calculateStats, buildSuiteTree, filterSuiteTreeByRoot, getProgressAISuiteIds, getChildrenOnly } from '../services/qaseApi';
-import StatCard from './StatCard';
-import DistributionChart from './DistributionChart';
+import AutomationOverviewWidget from './AutomationOverviewWidget';
 import SuiteFilter from './SuiteFilter';
 import TestCaseList from './TestCaseList';
 
@@ -89,57 +88,7 @@ export default function Dashboard({ suites, testCases }: DashboardProps) {
         />
       )}
 
-      <div className="stats-grid">
-        <StatCard
-          title="Total Tests"
-          value={filteredStats.totalTests}
-          icon="📊"
-          color="#8BE9FD"
-        />
-        <StatCard
-          title="Automated"
-          value={filteredStats.automatedTests}
-          subtitle={`${filteredStats.automationPercentage}%`}
-          icon="🤖"
-          color="#50FA7B"
-        />
-        <StatCard
-          title="Manual"
-          value={filteredStats.manualTests}
-          subtitle={`${100 - filteredStats.automationPercentage}%`}
-          icon="👤"
-          color="#FFB86C"
-        />
-        <StatCard
-          title="Automation Rate"
-          value={`${filteredStats.automationPercentage}%`}
-          icon="⚡"
-          color="#BD93F9"
-        />
-      </div>
-
-      <div className="charts-grid">
-        <DistributionChart
-          title="By Status"
-          data={filteredStats.byStatus}
-          color="#FF79C6"
-        />
-        <DistributionChart
-          title="By Priority"
-          data={filteredStats.byPriority}
-          color="#8BE9FD"
-        />
-        <DistributionChart
-          title="By Severity"
-          data={filteredStats.bySeverity}
-          color="#FF5555"
-        />
-        <DistributionChart
-          title="By Type"
-          data={filteredStats.byType}
-          color="#F1FA8C"
-        />
-      </div>
+      <AutomationOverviewWidget stats={filteredStats} />
 
       <TestCaseList testCases={filteredCases} suiteTree={suiteTree} />
     </div>

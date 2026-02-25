@@ -37,8 +37,8 @@ function App() {
       setLoading(false); // Show dashboard as soon as test cases are loaded
       
       // Then get suites based on the test cases we found (in background)
-      // Include suite ID 96 (Progress AI) even if it doesn't have direct test cases
-      getAllTestSuites(cases, [96]).then(suiteData => {
+      // Include root suite ID 9 even if it doesn't have direct test cases
+      getAllTestSuites(cases, [9]).then(suiteData => {
         setSuites(suiteData);
         isLoadingRef.current = false;
       }).catch(err => {

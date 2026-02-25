@@ -23,7 +23,7 @@ export default function Login({ onLogin }: LoginProps) {
 
     // Test the token by making a simple API call
     try {
-      const response = await fetch('https://api.qase.io/v1/project/MA', {
+      const response = await fetch('https://api.qase.io/v1/project/PAS', {
         headers: {
           'Token': token.trim(),
           'Content-Type': 'application/json',
@@ -101,6 +101,8 @@ export default function Login({ onLogin }: LoginProps) {
     </div>
   );
 }
+
+
 
 
 

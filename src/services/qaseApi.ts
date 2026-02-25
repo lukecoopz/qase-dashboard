@@ -8,7 +8,7 @@ import type {
 } from "../types";
 
 const PROXY_API_BASE = "http://localhost:3001/api";
-const PROJECT_CODE = "MA";
+const PROJECT_CODE = "PAS";
 
 async function fetchQase<T>(endpoint: string): Promise<T> {
   const response = await fetch(`${PROXY_API_BASE}${endpoint}`, {
@@ -180,7 +180,7 @@ export function buildSuiteTree(
   });
 
   // Include parent suites that might not have direct test cases
-  // This ensures parent suites like suite 96 are included in the tree
+  // This ensures parent suites like suite 9 are included in the tree
   suites.forEach((suite) => {
     if (suite.parent_id && !nodeMap.has(suite.parent_id)) {
       nodeMap.set(suite.parent_id, {
@@ -248,39 +248,45 @@ export function filterSuiteTreeByRoot(
 }
 
 // Get all suite IDs that are descendants of a given suite (including the suite itself)
-export function getProgressAISuiteIds(suiteTree: SuiteTreeNode[]): Set<number> {
+export function getProgressAISuiteIds(
+  suiteTree: SuiteTreeNode[],
+  rootSuiteId: number
+): Set<number> {
   const suiteIds = new Set<number>();
 
-  const findProgressAI = (nodes: SuiteTreeNode[]): SuiteTreeNode | null => {
+  const findRoot = (nodes: SuiteTreeNode[]): SuiteTreeNode | null => {
     for (const node of nodes) {
-      if (node.suite.id === 96) {
+      if (node.suite.id === rootSuiteId) {
         return node;
       }
-      const found = findProgressAI(node.children);
+      const found = findRoot(node.children);
       if (found) return found;
     }
     return null;
   };
 
-  const progressAINode = findProgressAI(suiteTree);
-  if (progressAINode) {
-    // Add the Progress AI suite and all its descendants
+  const rootNode = findRoot(suiteTree);
+  if (rootNode) {
+    // Add the root suite and all its descendants
     const collectIds = (node: SuiteTreeNode) => {
       suiteIds.add(node.suite.id);
       node.children.forEach(collectIds);
     };
-    collectIds(progressAINode);
+    collectIds(rootNode);
   }
 
   return suiteIds;
 }
 
 // Get only the children of a suite tree node (exclude the root)
-export function getChildrenOnly(suiteTree: SuiteTreeNode[]): SuiteTreeNode[] {
-  // If the tree has Progress AI as root, return only its children
-  const progressAINode = suiteTree.find((node) => node.suite.id === 96);
-  if (progressAINode) {
-    return progressAINode.children;
+export function getChildrenOnly(
+  suiteTree: SuiteTreeNode[],
+  rootSuiteId: number
+): SuiteTreeNode[] {
+  // If the tree has a configured root, return only its children
+  const rootNode = suiteTree.find((node) => node.suite.id === rootSuiteId);
+  if (rootNode) {
+    return rootNode.children;
   }
   return suiteTree;
 }

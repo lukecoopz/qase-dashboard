@@ -12,33 +12,34 @@ interface DashboardProps {
 
 export default function Dashboard({ suites, testCases }: DashboardProps) {
   const [selectedSuiteIds, setSelectedSuiteIds] = useState<Set<number>>(new Set());
+  const ROOT_SUITE_ID = 9;
 
-  // Build suite tree and filter to Progress AI suite group
+  // Build suite tree and filter to the configured root suite group
   const { suiteTree, progressAITestCases } = useMemo(() => {
     const fullTree = buildSuiteTree(suites, testCases);
-    // Filter to only show Progress AI suite (ID: 96) and its children
-    const filtered = filterSuiteTreeByRoot(fullTree, 96);
+    // Filter to only show root suite (ID: 9) and its children
+    const filtered = filterSuiteTreeByRoot(fullTree, ROOT_SUITE_ID);
     
-    // If suite 96 not found, try to find it by searching for children that have parent_id = 96
+    // If suite 9 not found, try to find it by searching for children that have parent_id = 9
     let progressAITree = filtered;
     if (filtered.length === 0) {
-      // Find all suites that are children of suite 96
+      // Find all suites that are children of suite 9
       const progressAIChildren = fullTree.flatMap(node => {
-        const findChildrenOf96 = (n: SuiteTreeNode): SuiteTreeNode[] => {
-          if (n.suite.parent_id === 96) {
+        const findChildrenOfRoot = (n: SuiteTreeNode): SuiteTreeNode[] => {
+          if (n.suite.parent_id === ROOT_SUITE_ID) {
             return [n];
           }
-          return n.children.flatMap(findChildrenOf96);
+          return n.children.flatMap(findChildrenOfRoot);
         };
-        return findChildrenOf96(node);
+        return findChildrenOfRoot(node);
       });
       
-      // If we found children of 96, create a parent node for it
+      // If we found children of 9, create a parent node for it
       if (progressAIChildren.length > 0) {
         const progressAINode: SuiteTreeNode = {
           suite: {
-            id: 96,
-            title: 'Progress AI',
+            id: ROOT_SUITE_ID,
+            title: 'PAS (Root)',
             parent_id: undefined,
           },
           children: progressAIChildren,
@@ -49,14 +50,17 @@ export default function Dashboard({ suites, testCases }: DashboardProps) {
       }
     }
     
-    // Get all suite IDs that belong to Progress AI (including children)
-    const progressAISuiteIds = getProgressAISuiteIds(progressAITree.length > 0 ? progressAITree : fullTree);
+    // Get all suite IDs that belong to the configured root (including children)
+    const progressAISuiteIds = getProgressAISuiteIds(
+      progressAITree.length > 0 ? progressAITree : fullTree,
+      ROOT_SUITE_ID
+    );
     
-    // Filter test cases to only Progress AI suites
+    // Filter test cases to only configured-root suites
     const progressAITestCases = testCases.filter(tc => progressAISuiteIds.has(tc.suite_id));
     
-    // Get only children (exclude the top-level Progress AI node)
-    const childrenOnly = getChildrenOnly(progressAITree);
+    // Get only children (exclude the top-level root node)
+    const childrenOnly = getChildrenOnly(progressAITree, ROOT_SUITE_ID);
     
     return {
       suiteTree: childrenOnly,

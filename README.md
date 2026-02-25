@@ -56,9 +56,9 @@ This creates a `dist` folder with static files.
 
 The dashboard is configured to use:
 
-- **Project Code**: MA
+- **Project Code**: PAS
 
-By default, the dashboard loads test cases from the "Progress AI" suite group (ID: 96) and its children. You can filter by specific test suites using the dropdown filter in the dashboard.
+By default, the dashboard loads test cases from the configured root suite group (ID: 9) and its children (matching `https://app.qase.io/project/PAS?suite=9`). You can filter by specific test suites using the dropdown filter in the dashboard.
 
 ## Features
 

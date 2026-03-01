@@ -7,7 +7,7 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-const QASE_API_BASE = "https://api.qase.io/v1";
+const QASE_API_BASE = "https://qase-dashboard.lukecoopz.workers.dev";
 const PROJECT_CODE = "PAS";
 
 function getToken(): string {

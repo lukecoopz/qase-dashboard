@@ -7,12 +7,19 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-const PROXY_API_BASE = "http://localhost:3001/api";
+const QASE_API_BASE = "https://api.qase.io/v1";
 const PROJECT_CODE = "PAS";
 
+function getToken(): string {
+  const token = localStorage.getItem("qase_api_token");
+  if (!token) throw new Error("No API token found. Please log in.");
+  return token;
+}
+
 async function fetchQase<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${PROXY_API_BASE}${endpoint}`, {
+  const response = await fetch(`${QASE_API_BASE}${endpoint}`, {
     headers: {
+      Token: getToken(),
       "Content-Type": "application/json",
     },
   });

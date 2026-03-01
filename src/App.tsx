@@ -1,27 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
 import { getAllTestCases, getAllTestSuites } from './services/qaseApi';
 import type { TestCase, TestSuite } from './types';
 import './App.css';
 
 function App() {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('qase_api_token'));
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [suites, setSuites] = useState<TestSuite[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isLoadingRef = useRef(false);
   const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
-    // Only load on initial mount, not on re-renders
-    if (!hasLoadedRef.current) {
-      loadData();
-      hasLoadedRef.current = true;
-    }
-  }, []);
-
   const loadData = async () => {
-    // Prevent multiple simultaneous API calls
     if (isLoadingRef.current) {
       return;
     }
@@ -29,13 +22,13 @@ function App() {
     isLoadingRef.current = true;
     setLoading(true);
     setError(null);
-    
+
     try {
       // First get all test cases
       const cases = await getAllTestCases();
       setTestCases(cases);
       setLoading(false); // Show dashboard as soon as test cases are loaded
-      
+
       // Then get suites based on the test cases we found (in background)
       // Include root suite ID 9 even if it doesn't have direct test cases
       getAllTestSuites(cases, [9]).then(suiteData => {
@@ -54,6 +47,30 @@ function App() {
     }
   };
 
+  const handleLogin = (newToken: string) => {
+    hasLoadedRef.current = false;
+    setToken(newToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('qase_api_token');
+    setToken(null);
+    setTestCases([]);
+    setSuites([]);
+    hasLoadedRef.current = false;
+  };
+
+  useEffect(() => {
+    if (token && !hasLoadedRef.current) {
+      loadData();
+      hasLoadedRef.current = true;
+    }
+  }, [token]);
+
+  if (!token) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app">
       <div className="app-header">
@@ -61,6 +78,9 @@ function App() {
         <div className="suite-input-container">
           <button onClick={loadData} className="refresh-button">
             Refresh
+          </button>
+          <button onClick={handleLogout} className="logout-button">
+            Logout
           </button>
         </div>
       </div>

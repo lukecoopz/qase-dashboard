@@ -7,7 +7,8 @@ import type {
   TestCaseDetail,
 } from "../types";
 
-const QASE_API_BASE = "https://api.qase.io/v1";
+// Replace this with your deployed Cloudflare Worker URL (see cloudflare-worker/index.js)
+const QASE_API_BASE = "https://qase-proxy.YOUR_SUBDOMAIN.workers.dev";
 const PROJECT_CODE = "PAS";
 
 function getToken(): string {

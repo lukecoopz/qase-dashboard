@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { TestRun, TestRunStats, TestResult, TestCase } from '../types';
-import { getTestRunsPage, getAllRunResults } from '../services/qaseApi';
+import { getAllTestRuns, getAllRunResults } from '../services/qaseApi';
 
 interface TestRunsViewProps {
   projectCode: string;
@@ -25,7 +25,22 @@ const RESULT_COLOR: Record<string, string> = {
   in_progress:          '#8BE9FD',
   retest:               '#BD93F9',
   invalid:              '#FF79C6',
+  untested:             '#44475A',
+  known_defect:         '#FF79C6',
 };
+
+// Ordered stat keys for bar + summary (excluding total)
+const STAT_KEYS: { key: keyof import('../types').TestRunStats; label: string }[] = [
+  { key: 'passed',      label: 'passed' },
+  { key: 'failed',      label: 'failed' },
+  { key: 'blocked',     label: 'blocked' },
+  { key: 'in_progress', label: 'in progress' },
+  { key: 'retest',      label: 'retest' },
+  { key: 'invalid',     label: 'invalid' },
+  { key: 'known_defect',label: 'known defect' },
+  { key: 'skipped',     label: 'skipped' },
+  { key: 'untested',    label: 'untested' },
+];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,15 +70,9 @@ function capitalize(s: string) {
 
 function ResultBar({ stats }: { stats: TestRunStats }) {
   const total = stats.total || 1;
-  const segments = [
-    { key: 'passed',      value: stats.passed,      color: RESULT_COLOR.passed },
-    { key: 'failed',      value: stats.failed,      color: RESULT_COLOR.failed },
-    { key: 'blocked',     value: stats.blocked,     color: RESULT_COLOR.blocked },
-    { key: 'in_progress', value: stats.in_progress, color: RESULT_COLOR.in_progress },
-    { key: 'retest',      value: stats.retest,      color: RESULT_COLOR.retest },
-    { key: 'skipped',     value: stats.skipped,     color: RESULT_COLOR.skipped },
-    { key: 'invalid',     value: stats.invalid,     color: RESULT_COLOR.invalid },
-  ].filter(s => s.value > 0);
+  const segments = STAT_KEYS
+    .map(({ key, label }) => ({ key, label, value: stats[key] ?? 0, color: RESULT_COLOR[key] ?? '#6272A4' }))
+    .filter(s => s.value > 0);
 
   return (
     <div className="run-result-bar-wrap">
@@ -73,7 +82,7 @@ function ResultBar({ stats }: { stats: TestRunStats }) {
             key={seg.key}
             className="run-result-bar-seg"
             style={{ width: `${(seg.value / total) * 100}%`, background: seg.color }}
-            title={`${capitalize(seg.key)}: ${seg.value}`}
+            title={`${capitalize(seg.label)}: ${seg.value}`}
           />
         ))}
       </div>
@@ -81,7 +90,7 @@ function ResultBar({ stats }: { stats: TestRunStats }) {
         {segments.map(seg => (
           <span key={seg.key} className="run-result-legend-item">
             <span className="run-result-legend-dot" style={{ background: seg.color }} />
-            <span className="run-result-legend-label">{capitalize(seg.key)}</span>
+            <span className="run-result-legend-label">{capitalize(seg.label)}</span>
             <span className="run-result-legend-count">{seg.value}</span>
           </span>
         ))}
@@ -90,8 +99,8 @@ function ResultBar({ stats }: { stats: TestRunStats }) {
   );
 }
 
-const NOT_PASSED_STATUSES = new Set(['failed', 'blocked', 'in_progress', 'retest', 'skipped', 'invalid']);
-const STATUS_ORDER = ['failed', 'blocked', 'in_progress', 'retest', 'skipped', 'invalid', 'passed', 'passed-with-comment'];
+const NOT_PASSED_STATUSES = new Set(['failed', 'blocked', 'in_progress', 'retest', 'skipped', 'invalid', 'untested', 'known_defect']);
+const STATUS_ORDER = ['failed', 'blocked', 'in_progress', 'retest', 'invalid', 'known_defect', 'skipped', 'untested', 'passed', 'passed-with-comment'];
 const RESULTS_PAGE_SIZE = 50;
 
 type ResultFilter = 'all' | 'not-passed';
@@ -294,21 +303,14 @@ function RunCard({
           <div className="run-card-stats">
             <div className="run-stats-summary">
               <span className="run-stat-total">{run.stats.total} total</span>
-              {run.stats.passed > 0 && (
-                <span className="run-stat passed">{run.stats.passed} passed</span>
-              )}
-              {run.stats.failed > 0 && (
-                <span className="run-stat failed">{run.stats.failed} failed</span>
-              )}
-              {run.stats.blocked > 0 && (
-                <span className="run-stat blocked">{run.stats.blocked} blocked</span>
-              )}
-              {run.stats.in_progress > 0 && (
-                <span className="run-stat in-progress">{run.stats.in_progress} in progress</span>
-              )}
-              {run.stats.skipped > 0 && (
-                <span className="run-stat skipped">{run.stats.skipped} skipped</span>
-              )}
+              {STAT_KEYS.map(({ key, label }) => {
+                const val = run.stats[key] ?? 0;
+                return val > 0 ? (
+                  <span key={key} className={`run-stat ${key.replace('_', '-')}`}>
+                    {val} {label}
+                  </span>
+                ) : null;
+              })}
             </div>
             <ResultBar stats={run.stats} />
           </div>
@@ -346,8 +348,7 @@ export default function TestRunsView({ projectCode, testCases }: TestRunsViewPro
     [testCases]
   );
 
-  const [runs, setRuns] = useState<TestRun[]>([]);
-  const [total, setTotal] = useState(0);
+  const [allRuns, setAllRuns] = useState<TestRun[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -355,24 +356,20 @@ export default function TestRunsView({ projectCode, testCases }: TestRunsViewPro
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getTestRunsPage(projectCode, PAGE_SIZE, page * PAGE_SIZE)
-      .then(({ runs: data, total: t }) => {
-        setRuns(data);
-        setTotal(t);
+    setPage(0);
+    getAllTestRuns(projectCode)
+      .then(data => {
+        setAllRuns(data);
         setLoading(false);
       })
       .catch(err => {
         setError(err instanceof Error ? err.message : 'Failed to load test runs');
         setLoading(false);
       });
-  }, [projectCode, page]);
-
-  // Reset to page 0 when project changes
-  useEffect(() => {
-    setPage(0);
   }, [projectCode]);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const totalPages = Math.ceil(allRuns.length / PAGE_SIZE);
+  const runs = allRuns.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <div className="runs-list">

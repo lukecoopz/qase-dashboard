@@ -313,16 +313,13 @@ export function calculateStats(testCases: TestCase[]): DashboardStats {
   return stats;
 }
 
-export async function getTestRunsPage(
-  projectCode: string,
-  limit: number,
-  offset: number
-): Promise<{ runs: TestRun[]; total: number }> {
-  const response = await fetchQase<QaseResponse<TestRun>>(
-    `/run/${projectCode}?limit=${limit}&offset=${offset}`
-  );
-  if (!response.status || !response.result) return { runs: [], total: 0 };
-  return { runs: response.result.entities, total: response.result.total };
+export async function getAllTestRuns(projectCode: string): Promise<TestRun[]> {
+  const all = await fetchAllPaged<TestRun>(`/run/${projectCode}`, 100);
+  return all.sort((a, b) => {
+    const aTime = a.start_time ? new Date(a.start_time).getTime() : 0;
+    const bTime = b.start_time ? new Date(b.start_time).getTime() : 0;
+    return bTime - aTime;
+  });
 }
 
 // The Qase v1 results API ignores filter[run_id] entirely and returns all project results.

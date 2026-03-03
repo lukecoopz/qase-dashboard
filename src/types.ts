@@ -78,6 +78,8 @@ export interface TestRunStats {
   invalid: number;
   retest: number;
   in_progress: number;
+  untested: number;
+  known_defect?: number;
 }
 
 export interface TestRun {

@@ -6,9 +6,10 @@ import './TestCaseList.css';
 interface TestCaseListProps {
   testCases: TestCase[];
   suiteTree: SuiteTreeNode[];
+  projectCode: string;
 }
 
-export default function TestCaseList({ testCases, suiteTree }: TestCaseListProps) {
+export default function TestCaseList({ testCases, suiteTree, projectCode }: TestCaseListProps) {
   const [expandedCases, setExpandedCases] = useState<Set<number>>(new Set());
   const [expandedSuites, setExpandedSuites] = useState<Set<number>>(new Set());
   const [caseDetails, setCaseDetails] = useState<Map<number, TestCaseDetail>>(new Map());
@@ -48,7 +49,7 @@ export default function TestCaseList({ testCases, suiteTree }: TestCaseListProps
       // Fetch details if not already loaded
       if (!caseDetails.has(caseId)) {
         setLoadingCases(prev => new Set(prev).add(caseId));
-        const detail = await getTestCaseDetail(caseId);
+        const detail = await getTestCaseDetail(projectCode, caseId);
         if (detail) {
           setCaseDetails(prev => new Map(prev).set(caseId, detail));
         }

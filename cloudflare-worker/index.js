@@ -1,15 +1,27 @@
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': 'https://lukecoopz.github.io',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Token, Content-Type',
-  'Access-Control-Max-Age': '86400',
-};
+const ALLOWED_ORIGINS = [
+  'https://lukecoopz.github.io',
+  'http://localhost:5173',
+  'http://localhost:4173', // vite preview
+];
+
+function getCorsHeaders(origin) {
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Token, Content-Type',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 export default {
   async fetch(request) {
+    const origin = request.headers.get('Origin') ?? '';
+    const corsHeaders = getCorsHeaders(origin);
+
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      return new Response(null, { status: 204, headers: corsHeaders });
     }
 
     // Only allow GET
@@ -32,7 +44,7 @@ export default {
       status: qaseResponse.status,
       headers: {
         'Content-Type': 'application/json',
-        ...CORS_HEADERS,
+        ...corsHeaders,
       },
     });
   },

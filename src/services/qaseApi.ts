@@ -5,10 +5,10 @@ import type {
   DashboardStats,
   SuiteTreeNode,
   TestCaseDetail,
+  QaseProject,
 } from "../types";
 
 const QASE_API_BASE = "https://qase-dashboard.lukecoopz.workers.dev";
-const PROJECT_CODE = "PAS";
 
 function getToken(): string {
   const token = localStorage.getItem("qase_api_token");
@@ -31,7 +31,31 @@ async function fetchQase<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
-export async function getAllTestCases(): Promise<TestCase[]> {
+export async function getProjects(): Promise<QaseProject[]> {
+  const allProjects: QaseProject[] = [];
+  let offset = 0;
+  const limit = 100;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await fetchQase<{
+      status: boolean;
+      result: { entities: QaseProject[]; total: number };
+    }>(`/project?limit=${limit}&offset=${offset}`);
+
+    if (response.status && response.result) {
+      allProjects.push(...response.result.entities);
+      offset += limit;
+      hasMore = offset < response.result.total;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allProjects;
+}
+
+export async function getAllTestCases(projectCode: string): Promise<TestCase[]> {
   const allCases: TestCase[] = [];
   let offset = 0;
   const limit = 100;
@@ -39,7 +63,7 @@ export async function getAllTestCases(): Promise<TestCase[]> {
 
   while (hasMore) {
     const response = await fetchQase<QaseResponse<TestCase>>(
-      `/case/${PROJECT_CODE}?limit=${limit}&offset=${offset}`
+      `/case/${projectCode}?limit=${limit}&offset=${offset}`
     );
 
     if (response.status && response.result) {
@@ -56,6 +80,7 @@ export async function getAllTestCases(): Promise<TestCase[]> {
 }
 
 export async function getAllTestSuites(
+  projectCode: string,
   testCases: TestCase[],
   requiredSuiteIds: number[] = []
 ): Promise<TestSuite[]> {
@@ -89,7 +114,7 @@ export async function getAllTestSuites(
       const response = await fetchQase<{
         status: boolean;
         result: TestSuite;
-      }>(`/suite/${PROJECT_CODE}/${suiteId}`);
+      }>(`/suite/${projectCode}/${suiteId}`);
 
       if (response.status && response.result) {
         const suite = response.result;
@@ -376,13 +401,14 @@ export function calculateStats(testCases: TestCase[]): DashboardStats {
 }
 
 export async function getTestCaseDetail(
+  projectCode: string,
   caseId: number
 ): Promise<TestCaseDetail | null> {
   try {
     const response = await fetchQase<{
       status: boolean;
       result: TestCaseDetail;
-    }>(`/case/${PROJECT_CODE}/${caseId}`);
+    }>(`/case/${projectCode}/${caseId}`);
 
     if (response.status && response.result) {
       return response.result;

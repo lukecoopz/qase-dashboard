@@ -6,6 +6,8 @@ import type {
   SuiteTreeNode,
   TestCaseDetail,
   QaseProject,
+  TestRun,
+  TestResult,
 } from "../types";
 
 const QASE_API_BASE = "https://qase-dashboard.lukecoopz.workers.dev";
@@ -31,136 +33,47 @@ async function fetchQase<T>(endpoint: string): Promise<T> {
   return response.json();
 }
 
+// Fetches the first page to get the total, then fires all remaining pages in parallel.
+async function fetchAllPaged<T>(
+  endpoint: string,
+  limit = 100
+): Promise<T[]> {
+  const sep = endpoint.includes("?") ? "&" : "?";
+  const first = await fetchQase<QaseResponse<T>>(
+    `${endpoint}${sep}limit=${limit}&offset=0`
+  );
+  if (!first.status || !first.result) return [];
+
+  const all = [...first.result.entities];
+  const total = first.result.total;
+  if (total <= limit) return all;
+
+  const remainingPages = Math.ceil((total - limit) / limit);
+  const pages = await Promise.all(
+    Array.from({ length: remainingPages }, (_, i) =>
+      fetchQase<QaseResponse<T>>(
+        `${endpoint}${sep}limit=${limit}&offset=${(i + 1) * limit}`
+      )
+    )
+  );
+
+  pages.forEach((page) => {
+    if (page.status && page.result) all.push(...page.result.entities);
+  });
+
+  return all;
+}
+
 export async function getProjects(): Promise<QaseProject[]> {
-  const allProjects: QaseProject[] = [];
-  let offset = 0;
-  const limit = 100;
-  let hasMore = true;
-
-  while (hasMore) {
-    const response = await fetchQase<{
-      status: boolean;
-      result: { entities: QaseProject[]; total: number };
-    }>(`/project?limit=${limit}&offset=${offset}`);
-
-    if (response.status && response.result) {
-      allProjects.push(...response.result.entities);
-      offset += limit;
-      hasMore = offset < response.result.total;
-    } else {
-      hasMore = false;
-    }
-  }
-
-  return allProjects;
+  return fetchAllPaged<QaseProject>("/project");
 }
 
 export async function getAllTestCases(projectCode: string): Promise<TestCase[]> {
-  const allCases: TestCase[] = [];
-  let offset = 0;
-  const limit = 100;
-  let hasMore = true;
-
-  while (hasMore) {
-    const response = await fetchQase<QaseResponse<TestCase>>(
-      `/case/${projectCode}?limit=${limit}&offset=${offset}`
-    );
-
-    if (response.status && response.result) {
-      allCases.push(...response.result.entities);
-      const total = response.result.total;
-      offset += limit;
-      hasMore = offset < total;
-    } else {
-      hasMore = false;
-    }
-  }
-
-  return allCases;
+  return fetchAllPaged<TestCase>(`/case/${projectCode}`);
 }
 
-export async function getAllTestSuites(
-  projectCode: string,
-  testCases: TestCase[],
-  requiredSuiteIds: number[] = []
-): Promise<TestSuite[]> {
-  // Get unique suite IDs from test cases
-  const uniqueSuiteIds = Array.from(
-    new Set(testCases.map((tc) => tc.suite_id))
-  );
-
-  // Add required suite IDs (like parent suites that might not have direct test cases)
-  requiredSuiteIds.forEach((id) => {
-    if (!uniqueSuiteIds.includes(id)) {
-      uniqueSuiteIds.push(id);
-    }
-  });
-
-  const suites: TestSuite[] = [];
-  const fetchedSuiteIds = new Set<number>();
-
-  // Fetch suites in parallel batches to speed things up
-  const batchSize = 10;
-
-  // Function to fetch a suite and its parents recursively
-  const fetchSuiteAndParents = async (
-    suiteId: number
-  ): Promise<TestSuite[]> => {
-    if (fetchedSuiteIds.has(suiteId)) {
-      return [];
-    }
-
-    try {
-      const response = await fetchQase<{
-        status: boolean;
-        result: TestSuite;
-      }>(`/suite/${projectCode}/${suiteId}`);
-
-      if (response.status && response.result) {
-        const suite = response.result;
-        fetchedSuiteIds.add(suiteId);
-        const result: TestSuite[] = [suite];
-
-        // If this suite has a parent, fetch the parent too
-        if (suite.parent_id) {
-          const parents = await fetchSuiteAndParents(suite.parent_id);
-          result.push(...parents);
-        }
-
-        return result;
-      }
-      return [];
-    } catch (error) {
-      console.error(`Error fetching suite ${suiteId}:`, error);
-      // Create a placeholder suite if we can't fetch it
-      // Don't add to fetchedSuiteIds so we can try again if needed
-      // But still return a placeholder so the tree can be built
-      return [
-        {
-          id: suiteId,
-          title: `Suite ${suiteId}`,
-          parent_id: undefined, // Will be set from test cases if available
-        } as TestSuite,
-      ];
-    }
-  };
-
-  // Fetch all suites and their parents
-  for (let i = 0; i < uniqueSuiteIds.length; i += batchSize) {
-    const batch = uniqueSuiteIds.slice(i, i + batchSize);
-    const batchPromises = batch.map((suiteId) => fetchSuiteAndParents(suiteId));
-    const batchResults = await Promise.all(batchPromises);
-
-    batchResults.forEach((suiteList) => {
-      suiteList.forEach((suite) => {
-        if (!suites.find((s) => s.id === suite.id)) {
-          suites.push(suite);
-        }
-      });
-    });
-  }
-
-  return suites;
+export async function getAllTestSuites(projectCode: string): Promise<TestSuite[]> {
+  return fetchAllPaged<TestSuite>(`/suite/${projectCode}`);
 }
 
 // Build a tree structure from suites
@@ -398,6 +311,25 @@ export function calculateStats(testCases: TestCase[]): DashboardStats {
       : 0;
 
   return stats;
+}
+
+export async function getAllTestRuns(projectCode: string): Promise<TestRun[]> {
+  const all = await fetchAllPaged<TestRun>(`/run/${projectCode}`, 100);
+  return all.sort((a, b) => {
+    const aTime = a.start_time ? new Date(a.start_time).getTime() : 0;
+    const bTime = b.start_time ? new Date(b.start_time).getTime() : 0;
+    return bTime - aTime;
+  });
+}
+
+// The Qase v1 results API ignores filter[run_id] entirely and returns all project results.
+// We fetch every page in parallel and filter client-side.
+export async function getAllRunResults(
+  projectCode: string,
+  runId: number
+): Promise<TestResult[]> {
+  const all = await fetchAllPaged<TestResult>(`/result/${projectCode}`, 100);
+  return all.filter(r => Number(r.run_id) === runId);
 }
 
 export async function getTestCaseDetail(

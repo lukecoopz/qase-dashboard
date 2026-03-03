@@ -65,7 +65,7 @@ function App() {
       setAppState('dashboard');
 
       // Load suites in background
-      getAllTestSuites(project.code, cases).then(suiteData => {
+      getAllTestSuites(project.code).then(suiteData => {
         setSuites(suiteData);
         setSuitesLoading(false);
         isLoadingRef.current = false;

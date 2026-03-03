@@ -69,3 +69,39 @@ export interface TestCaseDetail extends TestCase {
   steps?: TestStep[];
 }
 
+export interface TestRunStats {
+  total: number;
+  passed: number;
+  failed: number;
+  blocked: number;
+  skipped: number;
+  invalid: number;
+  retest: number;
+  in_progress: number;
+}
+
+export interface TestRun {
+  id: number;
+  title: string;
+  description?: string;
+  status: number; // 0=active, 1=complete, 2=abort, 3=review
+  start_time: string | null;
+  end_time: string | null;
+  time_spent: number;
+  stats: TestRunStats;
+  environment?: { title: string; slug: string } | null;
+  milestone?: { title: string } | null;
+  tags?: { title: string }[];
+}
+
+export interface TestResult {
+  hash: string;
+  case_id: number;
+  run_id: number;
+  status: string; // 'passed' | 'failed' | 'blocked' | 'skipped' | 'invalid' | 'in_progress' | 'passed-with-comment'
+  time_spent_ms: number | null;
+  comment: string | null;
+  author_uuid: string;
+  end_time: string | null;
+}
+

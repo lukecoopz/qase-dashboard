@@ -1,3 +1,13 @@
+export interface QaseProject {
+  code: string;
+  title: string;
+  description?: string;
+  counts?: {
+    cases: number;
+    suites: number;
+  };
+}
+
 export interface TestCase {
   id: number;
   title: string;

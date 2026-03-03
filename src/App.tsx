@@ -24,6 +24,7 @@ function App() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [suites, setSuites] = useState<TestSuite[]>([]);
   const [loading, setLoading] = useState(false);
+  const [suitesLoading, setSuitesLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isLoadingRef = useRef(false);
 
@@ -52,6 +53,7 @@ function App() {
     isLoadingRef.current = true;
     setAppState('loading-data');
     setLoading(true);
+    setSuitesLoading(true);
     setError(null);
     setTestCases([]);
     setSuites([]);
@@ -65,9 +67,11 @@ function App() {
       // Load suites in background
       getAllTestSuites(project.code, cases).then(suiteData => {
         setSuites(suiteData);
+        setSuitesLoading(false);
         isLoadingRef.current = false;
       }).catch(err => {
         console.error('Error loading suites:', err);
+        setSuitesLoading(false);
         isLoadingRef.current = false;
       });
     } catch (err) {
@@ -90,6 +94,7 @@ function App() {
     setSelectedProject(null);
     setTestCases([]);
     setSuites([]);
+    setSuitesLoading(false);
     setAppState('login');
     isLoadingRef.current = false;
   };
@@ -103,6 +108,7 @@ function App() {
     setSelectedProject(null);
     setTestCases([]);
     setSuites([]);
+    setSuitesLoading(false);
     setAppState('selecting-project');
   };
 
@@ -195,6 +201,7 @@ function App() {
           projectTitle={selectedProject.title}
           suites={suites}
           testCases={testCases}
+          suitesLoading={suitesLoading}
         />
       )}
     </div>

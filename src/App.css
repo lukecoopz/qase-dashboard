@@ -888,6 +888,23 @@
   color: #F8F8F2;
 }
 
+/* --- Suites loading inline --- */
+.suites-loading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+  color: #6272A4;
+  font-size: 0.95rem;
+}
+
+.suites-loading .spinner {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+  flex-shrink: 0;
+}
+
 /* --- Suite Browser --- */
 .suite-browser {
   display: flex;

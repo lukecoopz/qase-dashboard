@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import type { TestRun, TestRunStats, TestResult, TestCase } from '../types';
 import { getAllTestRuns, getAllRunResults } from '../services/qaseApi';
+import RunDurationChart from './RunDurationChart';
 
 interface TestRunsViewProps {
   projectCode: string;
@@ -384,6 +385,7 @@ export default function TestRunsView({ projectCode, testCases }: TestRunsViewPro
         <div className="runs-empty"><p>No test runs found for this project.</p></div>
       ) : (
         <>
+          <RunDurationChart runs={allRuns} />
           {runs.map(run => (
             <RunCard key={run.id} run={run} projectCode={projectCode} caseMap={caseMap} />
           ))}

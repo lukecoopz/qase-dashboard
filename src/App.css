@@ -1014,6 +1014,23 @@
   font-weight: 500;
 }
 
+/* --- Test Growth Chart --- */
+.growth-chart-card {
+  background: rgba(40, 42, 54, 0.7);
+  border: 1px solid rgba(98, 114, 164, 0.2);
+  border-radius: 12px;
+  padding: 20px 20px 12px;
+  margin-bottom: 24px;
+}
+
+.growth-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #F8F8F2;
+  margin: 0 0 16px;
+  letter-spacing: 0.3px;
+}
+
 /* --- Section nav cards (Test Suites / Test Runs) --- */
 .section-nav-grid {
   display: grid;

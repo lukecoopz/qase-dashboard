@@ -18,6 +18,7 @@ export interface TestCase {
   type: number;
   behavior: number;
   suite_id: number;
+  created_at: string | null;
 }
 
 export interface TestSuite {

@@ -140,6 +140,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'suites' && (
         <>
           <AutomationOverviewWidget stats={stats} />
+          <TestGrowthChart testCases={scopedTestCases} />
 
           {suitesLoading ? (
             <div className="suites-loading">

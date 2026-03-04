@@ -4,6 +4,7 @@ import { calculateStats, buildSuiteTree, getAllDescendantSuiteIds } from '../ser
 import AutomationOverviewWidget from './AutomationOverviewWidget';
 import TestCaseList from './TestCaseList';
 import TestRunsView from './TestRunsView';
+import TestGrowthChart from './TestGrowthChart';
 
 type Section = 'home' | 'suites' | 'runs';
 
@@ -102,6 +103,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'home' && (
         <>
           <AutomationOverviewWidget stats={projectStats} />
+          <TestGrowthChart testCases={testCases} />
           <div className="section-nav-grid">
             <button
               className="section-nav-card"

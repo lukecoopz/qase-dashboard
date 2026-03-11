@@ -1023,12 +1023,46 @@
   margin-bottom: 24px;
 }
 
+.growth-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .growth-chart-title {
   font-size: 14px;
   font-weight: 600;
   color: #F8F8F2;
-  margin: 0 0 16px;
+  margin: 0;
   letter-spacing: 0.3px;
+}
+
+.growth-chart-intervals {
+  display: flex;
+  gap: 4px;
+}
+
+.growth-interval-btn {
+  background: transparent;
+  border: 1px solid rgba(98, 114, 164, 0.3);
+  border-radius: 6px;
+  color: #6272A4;
+  font-size: 11px;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.growth-interval-btn:hover {
+  border-color: #6272A4;
+  color: #F8F8F2;
+}
+
+.growth-interval-btn.active {
+  background: rgba(98, 114, 164, 0.2);
+  border-color: #6272A4;
+  color: #F8F8F2;
 }
 
 /* --- Section nav cards (Test Suites / Test Runs) --- */

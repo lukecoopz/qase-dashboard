@@ -46,9 +46,9 @@ function formatBucketKey(key: string, interval: Interval): string {
 export default function TestGrowthChart({ testCases }: Props) {
   const [interval, setInterval] = useState<Interval>('month');
 
-  const data = useMemo(() => {
+  const { data, delta } = useMemo(() => {
     const dated = testCases.filter(tc => tc.created_at);
-    if (dated.length === 0) return [];
+    if (dated.length === 0) return { data: [], delta: null };
 
     const counts: Record<string, { total: number; automated: number }> = {};
     for (const tc of dated) {
@@ -62,7 +62,7 @@ export default function TestGrowthChart({ testCases }: Props) {
     let cumTotal = 0;
     let cumAutomated = 0;
 
-    return sorted.map(key => {
+    const chartData = sorted.map(key => {
       cumTotal += counts[key].total;
       cumAutomated += counts[key].automated;
       return {
@@ -71,6 +71,16 @@ export default function TestGrowthChart({ testCases }: Props) {
         Automated: cumAutomated,
       };
     });
+
+    const lastKey = sorted[sorted.length - 1];
+    const lastCounts = counts[lastKey];
+    const periodDelta = {
+      total: lastCounts.total,
+      automated: lastCounts.automated,
+      manual: lastCounts.total - lastCounts.automated,
+    };
+
+    return { data: chartData, delta: periodDelta };
   }, [testCases, interval]);
 
   if (data.length < 2) return null;
@@ -78,7 +88,22 @@ export default function TestGrowthChart({ testCases }: Props) {
   return (
     <div className="growth-chart-card">
       <div className="growth-chart-header">
-        <h3 className="growth-chart-title">Test Case Growth</h3>
+        <div className="growth-chart-title-row">
+          <h3 className="growth-chart-title">Test Case Growth</h3>
+          {delta && (
+            <div className="growth-chart-deltas">
+              <span className="growth-delta-badge growth-delta-total" title="Total added this period">
+                +{delta.total} total
+              </span>
+              <span className="growth-delta-badge growth-delta-automated" title="Automated added this period">
+                +{delta.automated} automated
+              </span>
+              <span className="growth-delta-badge growth-delta-manual" title="Manual added this period">
+                +{delta.manual} manual
+              </span>
+            </div>
+          )}
+        </div>
         <div className="growth-chart-intervals">
           {(['day', 'week', 'month'] as Interval[]).map(iv => (
             <button

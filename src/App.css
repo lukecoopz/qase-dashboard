@@ -1065,6 +1065,45 @@
   color: #F8F8F2;
 }
 
+.growth-chart-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.growth-chart-deltas {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.growth-delta-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.growth-delta-total {
+  background: rgba(139, 233, 253, 0.12);
+  border-color: rgba(139, 233, 253, 0.3);
+  color: #8BE9FD;
+}
+
+.growth-delta-automated {
+  background: rgba(80, 250, 123, 0.12);
+  border-color: rgba(80, 250, 123, 0.3);
+  color: #50FA7B;
+}
+
+.growth-delta-manual {
+  background: rgba(255, 184, 108, 0.12);
+  border-color: rgba(255, 184, 108, 0.3);
+  color: #FFB86C;
+}
+
 /* --- Section nav cards (Test Suites / Test Runs) --- */
 .section-nav-grid {
   display: grid;

@@ -1,6 +1,7 @@
 const ALLOWED_ORIGINS = [
   'https://lukecoopz.github.io',
   'http://localhost:5173',
+  'http://localhost:5174',
   'http://localhost:4173', // vite preview
 ];
 

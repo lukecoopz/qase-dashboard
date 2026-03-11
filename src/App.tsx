@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import ProjectSelector from './components/ProjectSelector';
@@ -15,6 +16,9 @@ if (DEV_TOKEN && !localStorage.getItem('qase_api_token')) {
 }
 
 function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [appState, setAppState] = useState<AppState>(() =>
     localStorage.getItem('qase_api_token') ? 'selecting-project' : 'login'
   );
@@ -85,6 +89,7 @@ function App() {
   const handleLogin = (newToken: string) => {
     setToken(newToken);
     setAppState('selecting-project');
+    navigate('/projects');
   };
 
   const handleLogout = () => {
@@ -97,10 +102,12 @@ function App() {
     setSuitesLoading(false);
     setAppState('login');
     isLoadingRef.current = false;
+    navigate('/');
   };
 
   const handleProjectSelect = (project: QaseProject) => {
     setSelectedProject(project);
+    navigate(`/${project.code}`);
     loadProjectData(project);
   };
 
@@ -110,6 +117,7 @@ function App() {
     setSuites([]);
     setSuitesLoading(false);
     setAppState('selecting-project');
+    navigate('/projects');
   };
 
   // On first load with a saved token, fetch projects
@@ -118,6 +126,21 @@ function App() {
       loadProjects();
     }
   }, [token]);
+
+  // After projects load, check if the URL points to a specific project and auto-load it
+  useEffect(() => {
+    if (appState !== 'selecting-project' || projects.length === 0) return;
+    const parts = location.pathname.split('/').filter(Boolean);
+    // parts[0] = project code (basename is stripped by React Router)
+    if (parts.length === 0 || parts[0] === 'projects') return;
+    const code = parts[0];
+    const project = projects.find(p => p.code.toLowerCase() === code.toLowerCase());
+    if (project) {
+      setSelectedProject(project);
+      loadProjectData(project);
+      // Don't navigate — keep the URL as-is so Dashboard can restore section/drillPath
+    }
+  }, [projects, appState]);
 
   if (appState === 'login') {
     return <Login onLogin={handleLogin} />;

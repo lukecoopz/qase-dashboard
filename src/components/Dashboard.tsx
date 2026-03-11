@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import type { TestSuite, TestCase, SuiteTreeNode } from '../types';
 import { calculateStats, buildSuiteTree, getAllDescendantSuiteIds } from '../services/qaseApi';
 import AutomationOverviewWidget from './AutomationOverviewWidget';
@@ -16,9 +17,21 @@ interface DashboardProps {
   suitesLoading?: boolean;
 }
 
+function sectionFromPath(pathname: string): Section {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts[1] === 'suites') return 'suites';
+  if (parts[1] === 'runs') return 'runs';
+  return 'home';
+}
+
 export default function Dashboard({ projectCode, projectTitle, suites, testCases, suitesLoading }: DashboardProps) {
-  const [section, setSection] = useState<Section>('home');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Initialise section from URL immediately to avoid flash
+  const [section, setSection] = useState<Section>(() => sectionFromPath(location.pathname));
   const [drillPath, setDrillPath] = useState<SuiteTreeNode[]>([]);
+  const hasRestoredDrillPath = useRef(false);
 
   const fullTree = useMemo(() => buildSuiteTree(suites, testCases), [suites, testCases]);
 
@@ -48,13 +61,59 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
   const stats = useMemo(() => calculateStats(scopedTestCases), [scopedTestCases]);
   const projectStats = useMemo(() => calculateStats(testCases), [testCases]);
 
-  const handleDrillDown = (node: SuiteTreeNode) => setDrillPath(prev => [...prev, node]);
+  // Restore drillPath from URL once suites have loaded
+  useEffect(() => {
+    if (suitesLoading || hasRestoredDrillPath.current || fullTree.length === 0) return;
+    hasRestoredDrillPath.current = true;
 
-  const handleBreadcrumbClick = (index: number) => setDrillPath(prev => prev.slice(0, index + 1));
+    const parts = location.pathname.split('/').filter(Boolean);
+    // parts: [projectCode, 'suites', id1, id2, ...]
+    if (parts[1] !== 'suites' || parts.length < 3) return;
+
+    const suiteIds = parts.slice(2).map(Number).filter(Boolean);
+    if (suiteIds.length === 0) return;
+
+    const path: SuiteTreeNode[] = [];
+    let nodes = fullTree;
+    for (const id of suiteIds) {
+      const node = nodes.find(n => n.suite.id === id);
+      if (!node) break;
+      path.push(node);
+      nodes = node.children;
+    }
+    if (path.length > 0) setDrillPath(path);
+  }, [suitesLoading, fullTree]);
+
+  // ── Navigation helpers ──────────────────────────────────────────────────────
+
+  const navToSection = (s: Section) => {
+    setSection(s);
+    if (s === 'suites') navigate(`/${projectCode}/suites`);
+    else if (s === 'runs') navigate(`/${projectCode}/runs`);
+    else navigate(`/${projectCode}`);
+  };
+
+  const handleDrillDown = (node: SuiteTreeNode) => {
+    const newPath = [...drillPath, node];
+    setDrillPath(newPath);
+    navigate(`/${projectCode}/suites/${newPath.map(n => n.suite.id).join('/')}`);
+  };
+
+  const handleBreadcrumbClick = (index: number) => {
+    const newPath = drillPath.slice(0, index + 1);
+    setDrillPath(newPath);
+    navigate(`/${projectCode}/suites/${newPath.map(n => n.suite.id).join('/')}`, { replace: true });
+  };
+
+  const handleSuitesRoot = () => {
+    setDrillPath([]);
+    navigate(`/${projectCode}/suites`, { replace: true });
+  };
 
   const handleSectionBack = () => {
     setSection('home');
     setDrillPath([]);
+    navigate(`/${projectCode}`, { replace: true });
   };
 
   return (
@@ -73,7 +132,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
               <span className="drill-breadcrumb-sep">›</span>
               <button
                 className={`drill-breadcrumb-item ${drillPath.length === 0 ? 'active' : ''}`}
-                onClick={() => setDrillPath([])}
+                onClick={handleSuitesRoot}
               >
                 Test Suites
               </button>
@@ -107,7 +166,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
           <div className="section-nav-grid">
             <button
               className="section-nav-card"
-              onClick={() => setSection('suites')}
+              onClick={() => navToSection('suites')}
             >
               <div className="section-nav-card-icon">🗂</div>
               <div className="section-nav-card-content">
@@ -121,7 +180,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
 
             <button
               className="section-nav-card"
-              onClick={() => setSection('runs')}
+              onClick={() => navToSection('runs')}
             >
               <div className="section-nav-card-icon">▶</div>
               <div className="section-nav-card-content">

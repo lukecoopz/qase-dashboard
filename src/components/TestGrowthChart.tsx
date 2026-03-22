@@ -69,6 +69,7 @@ export default function TestGrowthChart({ testCases }: Props) {
         label: formatBucketKey(key, interval),
         Total: cumTotal,
         Automated: cumAutomated,
+        Manual: cumTotal - cumAutomated,
       };
     });
 
@@ -140,6 +141,7 @@ export default function TestGrowthChart({ testCases }: Props) {
           <Legend wrapperStyle={{ fontSize: 12, color: '#6272A4', paddingTop: 8 }} />
           <Line type="monotone" dataKey="Total" stroke="#8BE9FD" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
           <Line type="monotone" dataKey="Automated" stroke="#50FA7B" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+          <Line type="monotone" dataKey="Manual" stroke="#FFB86C" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
         </LineChart>
       </ResponsiveContainer>
     </div>

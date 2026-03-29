@@ -1,0 +1,36 @@
+name: Daily Test Case Snapshot
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run snapshot script
+        env:
+          QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
+        run: node scripts/snapshot.mjs
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/data/snapshots/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: daily test case snapshot $(date -u +%Y-%m-%d)"
+            git push
+          fi

@@ -1038,6 +1038,45 @@
   letter-spacing: 0.3px;
 }
 
+.growth-chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.growth-date-range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.growth-date-input {
+  background: rgba(68, 71, 90, 0.5);
+  border: 1px solid rgba(98, 114, 164, 0.3);
+  border-radius: 6px;
+  color: #F8F8F2;
+  font-size: 11px;
+  padding: 3px 8px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  color-scheme: dark;
+}
+
+.growth-date-input:hover {
+  border-color: #6272A4;
+}
+
+.growth-date-input:focus {
+  outline: none;
+  border-color: #8BE9FD;
+}
+
+.growth-date-separator {
+  color: #6272A4;
+  font-size: 12px;
+}
+
 .growth-chart-intervals {
   display: flex;
   gap: 4px;

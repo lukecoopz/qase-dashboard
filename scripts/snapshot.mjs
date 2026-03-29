@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOTS_DIR = join(__dirname, '..', 'public', 'data', 'snapshots');
 
-const API_BASE = 'https://qase-dashboard.lukecoopz.workers.dev';
+const API_BASE = 'https://api.qase.io/v1';
 const TOKEN = process.env.QASE_API_TOKEN;
 if (!TOKEN) {
   console.error('QASE_API_TOKEN env var is required');

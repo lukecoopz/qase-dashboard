@@ -25,6 +25,7 @@ jobs:
         run: node scripts/snapshot.mjs
 
       - name: Create PR with snapshot data
+        id: create-pr
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore: daily test case snapshot"
@@ -33,3 +34,9 @@ jobs:
           body: Automated daily snapshot of test case counts from Qase.
           add-paths: public/data/snapshots/
           delete-branch: true
+
+      - name: Enable auto-merge on PR
+        if: steps.create-pr.outputs.pull-request-number
+        run: gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ github.token }}

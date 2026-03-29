@@ -162,7 +162,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'home' && (
         <>
           <AutomationOverviewWidget stats={projectStats} />
-          <TestGrowthChart testCases={testCases} />
+          <TestGrowthChart testCases={testCases} projectCode={projectCode} scopedSuiteIds={scopedSuiteIds} />
           <div className="section-nav-grid">
             <button
               className="section-nav-card"
@@ -199,7 +199,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'suites' && (
         <>
           <AutomationOverviewWidget stats={stats} />
-          <TestGrowthChart testCases={scopedTestCases} />
+          <TestGrowthChart testCases={scopedTestCases} projectCode={projectCode} scopedSuiteIds={scopedSuiteIds} />
 
           {suitesLoading ? (
             <div className="suites-loading">

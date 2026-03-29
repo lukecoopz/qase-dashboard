@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   snapshot:
@@ -23,14 +24,12 @@ jobs:
           QASE_API_TOKEN: ${{ secrets.QASE_API_TOKEN }}
         run: node scripts/snapshot.mjs
 
-      - name: Commit and push if changed
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/data/snapshots/
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: daily test case snapshot $(date -u +%Y-%m-%d)"
-            git push
-          fi
+      - name: Create PR with snapshot data
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: daily test case snapshot"
+          branch: automated/daily-snapshot
+          title: "chore: daily test case snapshot"
+          body: Automated daily snapshot of test case counts from Qase.
+          add-paths: public/data/snapshots/
+          delete-branch: true

@@ -29,7 +29,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: "chore: daily test case snapshot"
-          branch: automated/daily-snapshot
+          branch: automated/daily_test_cases_count
           title: "chore: daily test case snapshot"
           body: Automated daily snapshot of test case counts from Qase.
           add-paths: public/data/snapshots/

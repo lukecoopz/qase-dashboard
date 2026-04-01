@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,11 +11,11 @@ import {
 } from 'recharts';
 import type { TestCase } from '../types';
 
-type Interval = 'month' | 'week' | 'day';
+type Period = 'all' | 'month' | 'week' | 'day';
 
 interface SnapshotEntry {
   date: string;
-  suites: Record<string, [number, number]>; // [total, automated]
+  suites: Record<string, [number, number]>;
 }
 
 interface Props {
@@ -28,29 +28,26 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function getWeekStart(d: Date): Date {
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.getFullYear(), d.getMonth(), diff);
-}
-
-function toBucketKey(dateStr: string, interval: Interval): string {
-  const d = new Date(dateStr);
-  if (interval === 'month') {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
-  }
-  if (interval === 'week') {
-    const ws = getWeekStart(d);
-    return `${ws.getFullYear()}-${String(ws.getMonth() + 1).padStart(2, '0')}-${String(ws.getDate()).padStart(2, '0')}`;
-  }
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function formatBucketKey(key: string, interval: Interval): string {
+function formatBucketKey(key: string): string {
   const d = new Date(key);
-  if (interval === 'month') return d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
-  if (interval === 'week') return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+function shiftDate(date: string, period: 'day' | 'week' | 'month', direction: number): string {
+  const d = new Date(date);
+  if (period === 'day') d.setDate(d.getDate() + direction);
+  else if (period === 'week') d.setDate(d.getDate() + 7 * direction);
+  else d.setMonth(d.getMonth() + direction);
+  return toISODate(d);
+}
+
+function formatWindowLabel(start: string, end: string, period: 'day' | 'week' | 'month'): string {
+  const s = new Date(start);
+  const e = new Date(end);
+  if (period === 'day') return s.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const fmt = (d: Date) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const yr = e.getFullYear();
+  return `${fmt(s)} – ${fmt(e)} ${yr}`;
 }
 
 // ── Snapshot-based data ──────────────────────────────────────────────────────
@@ -70,7 +67,6 @@ function aggregateSnapshot(entry: SnapshotEntry, suiteIds: Set<number>): { total
 function buildSnapshotChartData(
   snapshots: SnapshotEntry[],
   suiteIds: Set<number>,
-  interval: Interval,
   startDate: string,
   endDate: string,
 ) {
@@ -79,18 +75,10 @@ function buildSnapshotChartData(
   if (endDate) filtered = filtered.filter(s => s.date <= endDate);
   if (filtered.length === 0) return { data: [], delta: null };
 
-  // Group by bucket, keep the last snapshot in each bucket (most recent state)
-  const buckets: Record<string, SnapshotEntry> = {};
-  for (const snap of filtered) {
-    const key = toBucketKey(snap.date, interval);
-    buckets[key] = snap;
-  }
-
-  const sortedKeys = Object.keys(buckets).sort();
-  const chartData = sortedKeys.map(key => {
-    const agg = aggregateSnapshot(buckets[key], suiteIds);
+  const chartData = filtered.map(snap => {
+    const agg = aggregateSnapshot(snap, suiteIds);
     return {
-      label: formatBucketKey(key, interval),
+      label: formatBucketKey(snap.date),
       Total: agg.total,
       Automated: agg.automated,
       Manual: agg.total - agg.automated,
@@ -112,7 +100,6 @@ function buildSnapshotChartData(
 
 function buildCreatedAtChartData(
   testCases: TestCase[],
-  interval: Interval,
   startDate: string,
   endDate: string,
 ) {
@@ -136,7 +123,7 @@ function buildCreatedAtChartData(
   for (const tc of dated) {
     const t = new Date(tc.created_at!).getTime();
     if (t >= startMs && t <= endMs) {
-      const key = toBucketKey(tc.created_at!, interval);
+      const key = toISODate(new Date(tc.created_at!));
       if (!counts[key]) counts[key] = { total: 0, automated: 0 };
       counts[key].total += 1;
       if (tc.automation === 2) counts[key].automated += 1;
@@ -153,7 +140,7 @@ function buildCreatedAtChartData(
     cumTotal += counts[key].total;
     cumAutomated += counts[key].automated;
     return {
-      label: formatBucketKey(key, interval),
+      label: formatBucketKey(key),
       Total: cumTotal,
       Automated: cumAutomated,
       Manual: cumTotal - cumAutomated,
@@ -174,9 +161,8 @@ function buildCreatedAtChartData(
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function TestGrowthChart({ testCases, projectCode, scopedSuiteIds }: Props) {
-  const [interval, setInterval] = useState<Interval>('day');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const [period, setPeriod] = useState<Period>('all');
+  const [offset, setOffset] = useState(0);
   const [snapshots, setSnapshots] = useState<SnapshotEntry[] | null>(null);
 
   useEffect(() => {
@@ -189,33 +175,57 @@ export default function TestGrowthChart({ testCases, projectCode, scopedSuiteIds
 
   const useSnapshots = snapshots !== null && snapshots.length > 1;
 
-  const dateRange = useMemo(() => {
-    if (useSnapshots) {
-      return { min: snapshots![0].date, max: snapshots![snapshots!.length - 1].date };
-    }
-    const dated = testCases.filter(tc => tc.created_at);
-    if (dated.length === 0) return { min: '', max: '' };
-    const sorted = dated.map(tc => tc.created_at!).sort();
-    return { min: toISODate(new Date(sorted[0])), max: toISODate(new Date(sorted[sorted.length - 1])) };
+  const dataMax = useMemo(() => {
+    if (useSnapshots) return snapshots![snapshots!.length - 1].date;
+    const dated = testCases.filter(tc => tc.created_at).map(tc => tc.created_at!).sort();
+    return dated.length > 0 ? toISODate(new Date(dated[dated.length - 1])) : toISODate(new Date());
   }, [useSnapshots, snapshots, testCases]);
 
-  const effectiveStart = startDate || dateRange.min;
-  const effectiveEnd = endDate || dateRange.max;
+  const dataMin = useMemo(() => {
+    if (useSnapshots) return snapshots![0].date;
+    const dated = testCases.filter(tc => tc.created_at).map(tc => tc.created_at!).sort();
+    return dated.length > 0 ? toISODate(new Date(dated[0])) : toISODate(new Date());
+  }, [useSnapshots, snapshots, testCases]);
+
+  const handlePeriodChange = useCallback((p: Period) => {
+    setPeriod(p);
+    setOffset(0);
+  }, []);
+
+  const { windowStart, windowEnd } = useMemo(() => {
+    if (period === 'all') return { windowStart: '', windowEnd: '' };
+    const today = toISODate(new Date());
+    const end = shiftDate(today > dataMax ? dataMax : today, period, offset);
+    const start = shiftDate(end, period, -1);
+    const adjustedStart = toISODate(new Date(new Date(start).getTime() + 86400000));
+    return { windowStart: adjustedStart, windowEnd: end };
+  }, [period, offset, dataMax]);
+
+  const canGoForward = useMemo(() => {
+    if (period === 'all') return false;
+    return offset < 0;
+  }, [period, offset]);
+
+  const canGoBack = useMemo(() => {
+    if (period === 'all') return false;
+    const nextStart = shiftDate(windowStart, period, -1);
+    return nextStart >= dataMin;
+  }, [period, windowStart, dataMin]);
 
   const { data, delta } = useMemo(() => {
+    const effectiveStart = period === 'all' ? '' : windowStart;
+    const effectiveEnd = period === 'all' ? '' : windowEnd;
     if (useSnapshots) {
-      return buildSnapshotChartData(snapshots!, scopedSuiteIds, interval, effectiveStart, effectiveEnd);
+      return buildSnapshotChartData(snapshots!, scopedSuiteIds, effectiveStart, effectiveEnd);
     }
-    return buildCreatedAtChartData(testCases, interval, effectiveStart, effectiveEnd);
-  }, [useSnapshots, snapshots, scopedSuiteIds, testCases, interval, effectiveStart, effectiveEnd]);
+    return buildCreatedAtChartData(testCases, effectiveStart, effectiveEnd);
+  }, [useSnapshots, snapshots, scopedSuiteIds, testCases, period, windowStart, windowEnd]);
 
   const hasEnoughData = useSnapshots
     ? (snapshots?.length ?? 0) >= 2
     : testCases.filter(tc => tc.created_at).length >= 2;
 
   if (!hasEnoughData) return null;
-
-  const sourceLabel = useSnapshots ? 'snapshot' : 'created_at';
 
   return (
     <div className="growth-chart-card">
@@ -224,42 +234,46 @@ export default function TestGrowthChart({ testCases, projectCode, scopedSuiteIds
           <h3 className="growth-chart-title">Test Case Growth</h3>
           {delta && (
             <div className="growth-chart-deltas">
-              <span className="growth-delta-badge growth-delta-total" title={`Total change in range (${sourceLabel})`}>
+              <span className="growth-delta-badge growth-delta-total">
                 {delta.total >= 0 ? '+' : ''}{delta.total} total
               </span>
-              <span className="growth-delta-badge growth-delta-automated" title={`Automated change in range (${sourceLabel})`}>
+              <span className="growth-delta-badge growth-delta-automated">
                 {delta.automated >= 0 ? '+' : ''}{delta.automated} automated
               </span>
-              <span className="growth-delta-badge growth-delta-manual" title={`Manual change in range (${sourceLabel})`}>
+              <span className="growth-delta-badge growth-delta-manual">
                 {delta.manual >= 0 ? '+' : ''}{delta.manual} manual
               </span>
             </div>
           )}
         </div>
         <div className="growth-chart-controls">
-          <div className="growth-date-range">
-            <input
-              type="date"
-              className="growth-date-input"
-              value={effectiveStart}
-              onChange={e => setStartDate(e.target.value)}
-            />
-            <span className="growth-date-separator">–</span>
-            <input
-              type="date"
-              className="growth-date-input"
-              value={effectiveEnd}
-              onChange={e => setEndDate(e.target.value)}
-            />
-          </div>
-          <div className="growth-chart-intervals">
-            {(['day', 'week', 'month'] as Interval[]).map(iv => (
+          {period !== 'all' && (
+            <div className="growth-nav">
               <button
-                key={iv}
-                className={`growth-interval-btn ${interval === iv ? 'active' : ''}`}
-                onClick={() => setInterval(iv)}
+                className="growth-nav-btn"
+                onClick={() => setOffset(o => o - 1)}
+                disabled={!canGoBack}
+                aria-label="Previous period"
+              >‹</button>
+              <span className="growth-nav-label">
+                {formatWindowLabel(windowStart, windowEnd, period)}
+              </span>
+              <button
+                className="growth-nav-btn"
+                onClick={() => setOffset(o => o + 1)}
+                disabled={!canGoForward}
+                aria-label="Next period"
+              >›</button>
+            </div>
+          )}
+          <div className="growth-chart-intervals">
+            {(['all', 'day', 'week', 'month'] as Period[]).map(p => (
+              <button
+                key={p}
+                className={`growth-interval-btn ${period === p ? 'active' : ''}`}
+                onClick={() => handlePeriodChange(p)}
               >
-                {iv.charAt(0).toUpperCase() + iv.slice(1)}
+                {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
           </div>

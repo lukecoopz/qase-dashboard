@@ -1044,37 +1044,45 @@
   gap: 12px;
 }
 
-.growth-date-range {
+.growth-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
-.growth-date-input {
-  background: rgba(68, 71, 90, 0.5);
+.growth-nav-btn {
+  background: transparent;
   border: 1px solid rgba(98, 114, 164, 0.3);
   border-radius: 6px;
+  color: #6272A4;
+  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.growth-nav-btn:hover:not(:disabled) {
+  border-color: #6272A4;
+  color: #F8F8F2;
+}
+
+.growth-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.growth-nav-label {
   color: #F8F8F2;
   font-size: 11px;
-  padding: 3px 8px;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s;
-  color-scheme: dark;
-}
-
-.growth-date-input:hover {
-  border-color: #6272A4;
-}
-
-.growth-date-input:focus {
-  outline: none;
-  border-color: #8BE9FD;
-}
-
-.growth-date-separator {
-  color: #6272A4;
-  font-size: 12px;
+  min-width: 120px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .growth-chart-intervals {

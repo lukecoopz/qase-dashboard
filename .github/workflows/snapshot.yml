@@ -35,8 +35,14 @@ jobs:
           add-paths: public/data/snapshots/
           delete-branch: true
 
-      - name: Enable auto-merge on PR
+      - name: Merge PR
         if: steps.create-pr.outputs.pull-request-number
-        run: gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} --squash --auto
+        run: gh pr merge ${{ steps.create-pr.outputs.pull-request-number }} --squash --delete-branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger deploy
+        if: steps.create-pr.outputs.pull-request-number
+        run: gh workflow run deploy.yml
         env:
           GH_TOKEN: ${{ github.token }}

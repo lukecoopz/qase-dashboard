@@ -4,6 +4,9 @@
  * then writes per-suite [total, automated] counts into per-project JSON files
  * at public/data/snapshots/{PROJECT_CODE}.json.
  *
+ * On first run (or when few entries exist), backfills historical data by
+ * computing cumulative per-suite counts at each created_at date.
+ *
  * Env: QASE_API_TOKEN (required)
  */
 
@@ -51,23 +54,59 @@ async function fetchAllPaged(endpoint, limit = 100) {
   return all;
 }
 
-function todayISO() {
-  const d = new Date();
+function toISO(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function todayISO() {
+  return toISO(new Date());
+}
+
+/**
+ * Build historical snapshot entries from created_at dates.
+ * For each unique creation date, compute cumulative per-suite counts
+ * up to and including that date (using current automation status).
+ */
+function buildBackfill(cases) {
+  const dated = cases.filter(tc => tc.created_at);
+  if (dated.length === 0) return [];
+
+  dated.sort((a, b) => a.created_at.localeCompare(b.created_at));
+
+  const dateSet = new Set();
+  for (const tc of dated) {
+    dateSet.add(toISO(new Date(tc.created_at)));
+  }
+  const dates = [...dateSet].sort();
+
+  const entries = [];
+  const cumSuites = {};
+
+  let idx = 0;
+  for (const date of dates) {
+    while (idx < dated.length && toISO(new Date(dated[idx].created_at)) <= date) {
+      const tc = dated[idx];
+      const sid = String(tc.suite_id);
+      if (!cumSuites[sid]) cumSuites[sid] = [0, 0];
+      cumSuites[sid][0] += 1;
+      if (tc.automation === 2) cumSuites[sid][1] += 1;
+      idx++;
+    }
+
+    const snapshot = {};
+    for (const [sid, counts] of Object.entries(cumSuites)) {
+      snapshot[sid] = [counts[0], counts[1]];
+    }
+    entries.push({ date, suites: snapshot });
+  }
+
+  return entries;
 }
 
 async function snapshotProject(code) {
   console.log(`  Fetching cases for ${code}...`);
   const cases = await fetchAllPaged(`/case/${code}`);
   console.log(`  Got ${cases.length} test cases`);
-
-  const suites = {};
-  for (const tc of cases) {
-    const sid = String(tc.suite_id);
-    if (!suites[sid]) suites[sid] = [0, 0];
-    suites[sid][0] += 1;
-    if (tc.automation === 2) suites[sid][1] += 1;
-  }
 
   const filePath = join(SNAPSHOTS_DIR, `${code}.json`);
   let history = [];
@@ -77,6 +116,27 @@ async function snapshotProject(code) {
     } catch {
       history = [];
     }
+  }
+
+  // Backfill if we have fewer than 7 real snapshot entries
+  if (history.length < 7 && cases.length > 0) {
+    const backfilled = buildBackfill(cases);
+    console.log(`  Backfilling ${backfilled.length} historical entries`);
+    const existingDates = new Set(history.map(e => e.date));
+    for (const entry of backfilled) {
+      if (!existingDates.has(entry.date)) {
+        history.push(entry);
+      }
+    }
+  }
+
+  // Today's live snapshot (overrides any backfill for today)
+  const suites = {};
+  for (const tc of cases) {
+    const sid = String(tc.suite_id);
+    if (!suites[sid]) suites[sid] = [0, 0];
+    suites[sid][0] += 1;
+    if (tc.automation === 2) suites[sid][1] += 1;
   }
 
   const date = todayISO();

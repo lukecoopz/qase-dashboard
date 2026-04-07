@@ -97,6 +97,19 @@ export interface TestRun {
   tags?: { title: string }[];
 }
 
+export interface SuiteTestCounts {
+  date: string;
+  suiteId: string;
+  total: number;
+  automated: number;
+  manual: number;
+}
+
+export interface SnapshotEntry {
+  date: string;
+  suites: Record<string, [number, number]>; // [total, automated]
+}
+
 export interface TestResult {
   hash: string;
   case_id: number;

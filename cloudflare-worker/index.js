@@ -37,27 +37,46 @@ async function handleSnapshotRead(url, env, corsHeaders) {
     return jsonResponse({ error: 'date query parameter is required (YYYY-MM-DD)' }, 400, corsHeaders);
   }
 
-  const row = await env.DB.prepare(
-    'SELECT project, suite_id, date, total, automated FROM snapshot_counts WHERE project = ? AND suite_id = ? AND date <= ? ORDER BY date DESC LIMIT 1'
-  ).bind(projectCode, suiteId, date).first();
+  // Find the most recent snapshot date on or before the requested date
+  const dateRow = await env.DB.prepare(
+    'SELECT DISTINCT date FROM snapshot_counts WHERE project = ? AND date <= ? ORDER BY date DESC LIMIT 1'
+  ).bind(projectCode, date).first();
 
-  if (!row) {
-    return jsonResponse({ error: `No snapshot data for project ${projectCode} suite ${suiteId} on or before ${date}` }, 404, corsHeaders);
+  if (!dateRow) {
+    return jsonResponse({ error: `No snapshot data for project ${projectCode} on or before ${date}` }, 404, corsHeaders);
   }
 
+  const snapshotDate = dateRow.date;
+
+  // Use recursive CTE to find the suite + all descendants, then SUM
+  const row = await env.DB.prepare(`
+    WITH RECURSIVE descendants(sid) AS (
+      VALUES(?)
+      UNION ALL
+      SELECT h.suite_id FROM suite_hierarchy h
+      JOIN descendants d ON h.parent_id = d.sid AND h.project = ?
+    )
+    SELECT SUM(total) as total, SUM(automated) as automated
+    FROM snapshot_counts
+    WHERE project = ? AND date = ? AND suite_id IN (SELECT sid FROM descendants)
+  `).bind(suiteId, projectCode, projectCode, snapshotDate).first();
+
+  const total = row?.total ?? 0;
+  const automated = row?.automated ?? 0;
+
   return jsonResponse({
-    project: row.project,
-    suite_id: row.suite_id,
+    project: projectCode,
+    suite_id: suiteId,
     requested_date: date,
-    snapshot_date: row.date,
-    total: row.total,
-    automated: row.automated,
-    manual: row.total - row.automated,
+    snapshot_date: snapshotDate,
+    total,
+    automated,
+    manual: total - automated,
   }, 200, corsHeaders);
 }
 
 async function handleSnapshotHistory(url, env, corsHeaders) {
-  const parts = url.pathname.split('/').filter(Boolean); // ["snapshot", "PAS", "history"]
+  const parts = url.pathname.split('/').filter(Boolean);
   const projectCode = parts[1];
   if (!projectCode) {
     return jsonResponse({ error: 'Project code is required: /snapshot/{code}/history' }, 400, corsHeaders);
@@ -97,12 +116,14 @@ async function handleSnapshotIngest(request, env, corsHeaders) {
     return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders);
   }
 
-  const { project, date, suites } = body;
+  const { project, date, suites, hierarchy } = body;
   if (!project || !date || !suites || typeof suites !== 'object') {
     return jsonResponse({ error: 'Required fields: project (string), date (YYYY-MM-DD), suites (object)' }, 400, corsHeaders);
   }
 
+  const BATCH_SIZE = 500;
   const statements = [];
+
   for (const [suiteId, counts] of Object.entries(suites)) {
     const [total, automated] = counts;
     statements.push(
@@ -112,12 +133,17 @@ async function handleSnapshotIngest(request, env, corsHeaders) {
     );
   }
 
-  if (statements.length === 0) {
-    return jsonResponse({ inserted: 0 }, 200, corsHeaders);
+  // Upsert suite hierarchy if provided
+  if (Array.isArray(hierarchy)) {
+    for (const entry of hierarchy) {
+      statements.push(
+        env.DB.prepare(
+          'INSERT OR REPLACE INTO suite_hierarchy (project, suite_id, parent_id) VALUES (?, ?, ?)'
+        ).bind(project, String(entry.id), entry.parent_id != null ? String(entry.parent_id) : null)
+      );
+    }
   }
 
-  // D1 batch limit is 500 statements per call
-  const BATCH_SIZE = 500;
   let totalInserted = 0;
   for (let i = 0; i < statements.length; i += BATCH_SIZE) {
     const batch = statements.slice(i, i + BATCH_SIZE);

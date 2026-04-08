@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
  * Daily snapshot script — fetches all Qase projects and their test cases,
- * computes per-suite [total, automated] counts (with parent rollup), and
- * POSTs the data to the Cloudflare Worker for D1 storage.
+ * computes per-suite direct [total, automated] counts, and POSTs the data
+ * (plus suite hierarchy) to the Cloudflare Worker for D1 storage.
+ *
+ * Parent suite rollups are computed on-the-fly by the worker using the
+ * hierarchy table, so only direct counts are stored.
  *
  * Env: QASE_API_TOKEN  (required)
  *      WORKER_URL      (required — Cloudflare Worker base URL)
@@ -57,37 +60,14 @@ function toISO(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function buildSuiteTree(suites) {
-  const childToParent = new Map();
-  for (const s of suites) {
-    if (s.parent_id != null) {
-      childToParent.set(String(s.id), String(s.parent_id));
-    }
-  }
-  return childToParent;
-}
-
-function rollUpParentCounts(suiteCounts, childToParent) {
-  for (const [sid, counts] of Object.entries(suiteCounts)) {
-    let current = sid;
-    while (childToParent.has(current)) {
-      const parentId = childToParent.get(current);
-      if (!suiteCounts[parentId]) suiteCounts[parentId] = [0, 0];
-      suiteCounts[parentId][0] += counts[0];
-      suiteCounts[parentId][1] += counts[1];
-      current = parentId;
-    }
-  }
-}
-
-async function postToD1(project, date, suites) {
+async function postToD1(project, date, suites, hierarchy) {
   const res = await fetch(`${WORKER_URL}/snapshot/ingest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${SNAPSHOT_SECRET}`,
     },
-    body: JSON.stringify({ project, date, suites }),
+    body: JSON.stringify({ project, date, suites, hierarchy }),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -105,8 +85,6 @@ async function snapshotProject(code) {
   ]);
   console.log(`  Got ${cases.length} test cases, ${suiteList.length} suites`);
 
-  const childToParent = buildSuiteTree(suiteList);
-
   const suites = {};
   for (const tc of cases) {
     const sid = String(tc.suite_id);
@@ -114,10 +92,11 @@ async function snapshotProject(code) {
     suites[sid][0] += 1;
     if (tc.automation === 2) suites[sid][1] += 1;
   }
-  rollUpParentCounts(suites, childToParent);
+
+  const hierarchy = suiteList.map(s => ({ id: s.id, parent_id: s.parent_id }));
 
   const date = toISO(new Date());
-  await postToD1(code, date, suites);
+  await postToD1(code, date, suites, hierarchy);
 }
 
 async function main() {

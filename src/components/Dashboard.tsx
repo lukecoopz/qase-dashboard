@@ -53,6 +53,20 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
     return new Set(getAllDescendantSuiteIds(currentNode.suite.id, fullTree));
   }, [drillPath, fullTree]);
 
+  const leafSuiteIds = useMemo(() => {
+    const ids = new Set<number>();
+    const collect = (nodes: SuiteTreeNode[]) => {
+      nodes.forEach(n => {
+        if (n.children.length === 0) {
+          if (scopedSuiteIds.has(n.suite.id)) ids.add(n.suite.id);
+        }
+        collect(n.children);
+      });
+    };
+    collect(fullTree);
+    return ids;
+  }, [scopedSuiteIds, fullTree]);
+
   const scopedTestCases = useMemo(
     () => testCases.filter(tc => scopedSuiteIds.has(tc.suite_id)),
     [testCases, scopedSuiteIds]
@@ -162,7 +176,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'home' && (
         <>
           <AutomationOverviewWidget stats={projectStats} />
-          <TestGrowthChart testCases={testCases} projectCode={projectCode} scopedSuiteIds={scopedSuiteIds} />
+          <TestGrowthChart testCases={testCases} projectCode={projectCode} scopedSuiteIds={leafSuiteIds} />
           <div className="section-nav-grid">
             <button
               className="section-nav-card"
@@ -199,7 +213,7 @@ export default function Dashboard({ projectCode, projectTitle, suites, testCases
       {section === 'suites' && (
         <>
           <AutomationOverviewWidget stats={stats} />
-          <TestGrowthChart testCases={scopedTestCases} projectCode={projectCode} scopedSuiteIds={scopedSuiteIds} />
+          <TestGrowthChart testCases={scopedTestCases} projectCode={projectCode} scopedSuiteIds={leafSuiteIds} />
 
           {suitesLoading ? (
             <div className="suites-loading">

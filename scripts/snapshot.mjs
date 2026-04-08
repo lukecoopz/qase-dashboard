@@ -63,11 +63,44 @@ function todayISO() {
 }
 
 /**
+ * Build a map of parent_id → [child_id, ...] from the suite list.
+ * Returns { childToParent, allParents } where allParents is the set of
+ * suite IDs that have at least one child.
+ */
+function buildSuiteTree(suites) {
+  const childToParent = new Map();
+  for (const s of suites) {
+    if (s.parent_id != null) {
+      childToParent.set(String(s.id), String(s.parent_id));
+    }
+  }
+  return childToParent;
+}
+
+/**
+ * Given leaf-level suite counts and the child→parent map, roll up totals
+ * so every ancestor suite includes the sum of all its descendants.
+ * Mutates suiteCounts in place.
+ */
+function rollUpParentCounts(suiteCounts, childToParent) {
+  for (const [sid, counts] of Object.entries(suiteCounts)) {
+    let current = sid;
+    while (childToParent.has(current)) {
+      const parentId = childToParent.get(current);
+      if (!suiteCounts[parentId]) suiteCounts[parentId] = [0, 0];
+      suiteCounts[parentId][0] += counts[0];
+      suiteCounts[parentId][1] += counts[1];
+      current = parentId;
+    }
+  }
+}
+
+/**
  * Build historical snapshot entries from created_at dates.
  * For each unique creation date, compute cumulative per-suite counts
  * up to and including that date (using current automation status).
  */
-function buildBackfill(cases) {
+function buildBackfill(cases, childToParent) {
   const dated = cases.filter(tc => tc.created_at);
   if (dated.length === 0) return [];
 
@@ -97,6 +130,7 @@ function buildBackfill(cases) {
     for (const [sid, counts] of Object.entries(cumSuites)) {
       snapshot[sid] = [counts[0], counts[1]];
     }
+    rollUpParentCounts(snapshot, childToParent);
     entries.push({ date, suites: snapshot });
   }
 
@@ -105,8 +139,13 @@ function buildBackfill(cases) {
 
 async function snapshotProject(code) {
   console.log(`  Fetching cases for ${code}...`);
-  const cases = await fetchAllPaged(`/case/${code}`);
-  console.log(`  Got ${cases.length} test cases`);
+  const [cases, suiteList] = await Promise.all([
+    fetchAllPaged(`/case/${code}`),
+    fetchAllPaged(`/suite/${code}`),
+  ]);
+  console.log(`  Got ${cases.length} test cases, ${suiteList.length} suites`);
+
+  const childToParent = buildSuiteTree(suiteList);
 
   const filePath = join(SNAPSHOTS_DIR, `${code}.json`);
   let history = [];
@@ -120,7 +159,7 @@ async function snapshotProject(code) {
 
   // Backfill if we have fewer than 7 real snapshot entries
   if (history.length < 7 && cases.length > 0) {
-    const backfilled = buildBackfill(cases);
+    const backfilled = buildBackfill(cases, childToParent);
     console.log(`  Backfilling ${backfilled.length} historical entries`);
     const existingDates = new Set(history.map(e => e.date));
     for (const entry of backfilled) {
@@ -138,6 +177,7 @@ async function snapshotProject(code) {
     suites[sid][0] += 1;
     if (tc.automation === 2) suites[sid][1] += 1;
   }
+  rollUpParentCounts(suites, childToParent);
 
   const date = todayISO();
   const idx = history.findIndex(e => e.date === date);

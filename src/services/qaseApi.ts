@@ -8,7 +8,6 @@ import type {
   QaseProject,
   TestRun,
   TestResult,
-  SnapshotEntry,
   SuiteTestCounts,
 } from "../types";
 
@@ -354,58 +353,22 @@ export async function getTestCaseDetail(
   }
 }
 
-const SNAPSHOTS_BASE = `${window.location.origin}${import.meta.env.BASE_URL}data/snapshots`;
-
-function findSnapshotForDate(
-  history: SnapshotEntry[],
-  targetDate: string
-): SnapshotEntry | null {
-  if (history.length === 0) return null;
-
-  const exact = history.find((e) => e.date === targetDate);
-  if (exact) return exact;
-
-  // Binary search for the most recent entry on or before targetDate
-  let lo = 0;
-  let hi = history.length - 1;
-  let best = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >>> 1;
-    if (history[mid].date <= targetDate) {
-      best = mid;
-      lo = mid + 1;
-    } else {
-      hi = mid - 1;
-    }
-  }
-
-  return best >= 0 ? history[best] : null;
-}
-
 export async function getSnapshotCounts(
   projectCode: string,
   suiteId: number | string,
   date: string
 ): Promise<SuiteTestCounts | null> {
-  const res = await fetch(`${SNAPSHOTS_BASE}/${projectCode}.json`);
+  const res = await fetch(
+    `${QASE_API_BASE}/snapshot/${projectCode}?suite_id=${suiteId}&date=${date}`
+  );
   if (!res.ok) return null;
 
-  const history: SnapshotEntry[] = await res.json();
-  const entry = findSnapshotForDate(history, date);
-  if (!entry) return null;
-
-  const sid = String(suiteId);
-  const counts = entry.suites[sid];
-  if (!counts) {
-    return { date: entry.date, suiteId: sid, total: 0, automated: 0, manual: 0 };
-  }
-
-  const [total, automated] = counts;
+  const data = await res.json();
   return {
-    date: entry.date,
-    suiteId: sid,
-    total,
-    automated,
-    manual: total - automated,
+    date: data.snapshot_date,
+    suiteId: data.suite_id,
+    total: data.total,
+    automated: data.automated,
+    manual: data.manual,
   };
 }

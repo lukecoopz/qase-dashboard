@@ -1,0 +1,8 @@
+name = "qase-dashboard"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "qase-snapshots"
+database_id = "7d3c9722-99a8-4fee-adfb-f14d6e1e6d1d"

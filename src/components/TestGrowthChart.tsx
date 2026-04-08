@@ -166,8 +166,8 @@ export default function TestGrowthChart({ testCases, projectCode, scopedSuiteIds
   const [snapshots, setSnapshots] = useState<SnapshotEntry[] | null>(null);
 
   useEffect(() => {
-    const base = import.meta.env.BASE_URL || '/';
-    fetch(`${base}data/snapshots/${projectCode}.json`)
+    const workerBase = 'https://qase-dashboard.lukecoopz.workers.dev';
+    fetch(`${workerBase}/snapshot/${projectCode}/history`)
       .then(res => res.ok ? res.json() : null)
       .then(data => setSnapshots(Array.isArray(data) && data.length > 0 ? data : null))
       .catch(() => setSnapshots(null));

@@ -1,26 +1,28 @@
 #!/usr/bin/env node
 /**
  * Daily snapshot script — fetches all Qase projects and their test cases,
- * then writes per-suite [total, automated] counts into per-project JSON files
- * at public/data/snapshots/{PROJECT_CODE}.json.
+ * computes per-suite direct [total, automated] counts, and POSTs the data
+ * (plus suite hierarchy) to the Cloudflare Worker for D1 storage.
  *
- * On first run (or when few entries exist), backfills historical data by
- * computing cumulative per-suite counts at each created_at date.
+ * Parent suite rollups are computed on-the-fly by the worker using the
+ * hierarchy table, so only direct counts are stored.
  *
- * Env: QASE_API_TOKEN (required)
+ * Env: QASE_API_TOKEN  (required)
+ *      WORKER_URL      (required — Cloudflare Worker base URL)
+ *      SNAPSHOT_SECRET  (required — auth token for D1 ingest endpoint)
  */
-
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const SNAPSHOTS_DIR = join(__dirname, '..', 'public', 'data', 'snapshots');
 
 const API_BASE = 'https://api.qase.io/v1';
 const TOKEN = process.env.QASE_API_TOKEN;
+const WORKER_URL = process.env.WORKER_URL;
+const SNAPSHOT_SECRET = process.env.SNAPSHOT_SECRET;
+
 if (!TOKEN) {
   console.error('QASE_API_TOKEN env var is required');
+  process.exit(1);
+}
+if (!WORKER_URL || !SNAPSHOT_SECRET) {
+  console.error('WORKER_URL and SNAPSHOT_SECRET env vars are required');
   process.exit(1);
 }
 
@@ -58,83 +60,21 @@ function toISO(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function todayISO() {
-  return toISO(new Date());
-}
-
-/**
- * Build a map of parent_id → [child_id, ...] from the suite list.
- * Returns { childToParent, allParents } where allParents is the set of
- * suite IDs that have at least one child.
- */
-function buildSuiteTree(suites) {
-  const childToParent = new Map();
-  for (const s of suites) {
-    if (s.parent_id != null) {
-      childToParent.set(String(s.id), String(s.parent_id));
-    }
+async function postToD1(project, date, suites, hierarchy) {
+  const res = await fetch(`${WORKER_URL}/snapshot/ingest`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SNAPSHOT_SECRET}`,
+    },
+    body: JSON.stringify({ project, date, suites, hierarchy }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`D1 ingest failed (${res.status}): ${text}`);
   }
-  return childToParent;
-}
-
-/**
- * Given leaf-level suite counts and the child→parent map, roll up totals
- * so every ancestor suite includes the sum of all its descendants.
- * Mutates suiteCounts in place.
- */
-function rollUpParentCounts(suiteCounts, childToParent) {
-  for (const [sid, counts] of Object.entries(suiteCounts)) {
-    let current = sid;
-    while (childToParent.has(current)) {
-      const parentId = childToParent.get(current);
-      if (!suiteCounts[parentId]) suiteCounts[parentId] = [0, 0];
-      suiteCounts[parentId][0] += counts[0];
-      suiteCounts[parentId][1] += counts[1];
-      current = parentId;
-    }
-  }
-}
-
-/**
- * Build historical snapshot entries from created_at dates.
- * For each unique creation date, compute cumulative per-suite counts
- * up to and including that date (using current automation status).
- */
-function buildBackfill(cases, childToParent) {
-  const dated = cases.filter(tc => tc.created_at);
-  if (dated.length === 0) return [];
-
-  dated.sort((a, b) => a.created_at.localeCompare(b.created_at));
-
-  const dateSet = new Set();
-  for (const tc of dated) {
-    dateSet.add(toISO(new Date(tc.created_at)));
-  }
-  const dates = [...dateSet].sort();
-
-  const entries = [];
-  const cumSuites = {};
-
-  let idx = 0;
-  for (const date of dates) {
-    while (idx < dated.length && toISO(new Date(dated[idx].created_at)) <= date) {
-      const tc = dated[idx];
-      const sid = String(tc.suite_id);
-      if (!cumSuites[sid]) cumSuites[sid] = [0, 0];
-      cumSuites[sid][0] += 1;
-      if (tc.automation === 2) cumSuites[sid][1] += 1;
-      idx++;
-    }
-
-    const snapshot = {};
-    for (const [sid, counts] of Object.entries(cumSuites)) {
-      snapshot[sid] = [counts[0], counts[1]];
-    }
-    rollUpParentCounts(snapshot, childToParent);
-    entries.push({ date, suites: snapshot });
-  }
-
-  return entries;
+  const result = await res.json();
+  console.log(`  D1: inserted ${result.inserted} rows for ${project} @ ${date}`);
 }
 
 async function snapshotProject(code) {
@@ -145,31 +85,6 @@ async function snapshotProject(code) {
   ]);
   console.log(`  Got ${cases.length} test cases, ${suiteList.length} suites`);
 
-  const childToParent = buildSuiteTree(suiteList);
-
-  const filePath = join(SNAPSHOTS_DIR, `${code}.json`);
-  let history = [];
-  if (existsSync(filePath)) {
-    try {
-      history = JSON.parse(readFileSync(filePath, 'utf-8'));
-    } catch {
-      history = [];
-    }
-  }
-
-  // Backfill if we have fewer than 7 real snapshot entries
-  if (history.length < 7 && cases.length > 0) {
-    const backfilled = buildBackfill(cases, childToParent);
-    console.log(`  Backfilling ${backfilled.length} historical entries`);
-    const existingDates = new Set(history.map(e => e.date));
-    for (const entry of backfilled) {
-      if (!existingDates.has(entry.date)) {
-        history.push(entry);
-      }
-    }
-  }
-
-  // Today's live snapshot (overrides any backfill for today)
   const suites = {};
   for (const tc of cases) {
     const sid = String(tc.suite_id);
@@ -177,20 +92,11 @@ async function snapshotProject(code) {
     suites[sid][0] += 1;
     if (tc.automation === 2) suites[sid][1] += 1;
   }
-  rollUpParentCounts(suites, childToParent);
 
-  const date = todayISO();
-  const idx = history.findIndex(e => e.date === date);
-  const entry = { date, suites };
-  if (idx >= 0) {
-    history[idx] = entry;
-  } else {
-    history.push(entry);
-  }
+  const hierarchy = suiteList.map(s => ({ id: s.id, parent_id: s.parent_id }));
 
-  history.sort((a, b) => a.date.localeCompare(b.date));
-  writeFileSync(filePath, JSON.stringify(history, null, 2) + '\n');
-  console.log(`  Wrote ${filePath} (${history.length} entries)`);
+  const date = toISO(new Date());
+  await postToD1(code, date, suites, hierarchy);
 }
 
 async function main() {

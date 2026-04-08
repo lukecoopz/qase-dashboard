@@ -105,11 +105,6 @@ export interface SuiteTestCounts {
   manual: number;
 }
 
-export interface SnapshotEntry {
-  date: string;
-  suites: Record<string, [number, number]>; // [total, automated]
-}
-
 export interface TestResult {
   hash: string;
   case_id: number;

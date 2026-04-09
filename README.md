@@ -8,7 +8,6 @@ A dashboard for viewing test case statistics from [Qase.io](https://qase.io), de
 - Track automation percentage across projects and suites
 - Test case growth chart with historical trends (daily snapshots stored in Cloudflare D1)
 - View test run history and results
-- Query snapshot counts via API: `GET /snapshot/{code}?suite_id=…&date=…`
 
 ## Architecture
 

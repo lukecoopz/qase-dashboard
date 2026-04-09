@@ -29,15 +29,3 @@ Requires a `.env` file with your Qase API token:
 ```env
 QASE_API_TOKEN=your_token_here
 ```
-
-## Snapshot API
-
-The Cloudflare Worker exposes snapshot endpoints (no auth required for reads):
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/snapshot/{code}?suite_id=…&date=…` | Test counts for a suite on a date (falls back to most recent) |
-| GET | `/snapshot/{code}/history` | Full project snapshot history |
-| POST | `/snapshot/ingest` | Write daily snapshot (auth required) |
-
-Parent suite queries automatically aggregate child suite counts via the stored suite hierarchy.

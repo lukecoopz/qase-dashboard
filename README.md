@@ -19,6 +19,10 @@ A dashboard for viewing test case statistics from [Qase.io](https://qase.io), de
 
 ## Getting Started
 
+Visit the live dashboard at [lukecoopz.github.io/qase-dashboard](https://lukecoopz.github.io/qase-dashboard).
+
+### Running Locally
+
 ```bash
 npm install
 npm run dev

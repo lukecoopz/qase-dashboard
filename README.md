@@ -1,86 +1,35 @@
 # Qase Dashboard
 
-A beautiful glass-morphism dashboard for viewing test case statistics from Qase.io.
+A dashboard for viewing test case statistics from [Qase.io](https://qase.io), deployed on GitHub Pages with a Cloudflare Worker + D1 backend.
 
 ## Features
 
-- 📊 View test case statistics for specific test suites
-- 🤖 Track automation percentage
-- 📈 Visualize distributions by status, priority, severity, and type
-- 🎨 Beautiful Dracula-themed dark UI with glass morphism effects
-- 🔄 Support for multiple test suites
-- 📱 Responsive design
+- Browse and drill into test suite hierarchies
+- Track automation percentage across projects and suites
+- Test case growth chart with historical trends (daily snapshots stored in Cloudflare D1)
+- View test run history and results
+- Query snapshot counts via API: `GET /snapshot/{code}?suite_id=…&date=…`
+
+## Architecture
+
+- **Frontend**: React + Vite, deployed to GitHub Pages
+- **API Proxy**: Cloudflare Worker proxies Qase API requests and serves snapshot data
+- **Snapshot Storage**: Cloudflare D1 (SQLite) — daily cron stores per-suite test counts
+- **Daily Cron**: GitHub Actions runs `scripts/snapshot.mjs` at 6am UTC
 
 ## Getting Started
 
-### Installation
+Visit the live dashboard at [lukecoopz.github.io/qase-dashboard](https://lukecoopz.github.io/qase-dashboard).
+
+### Running Locally
 
 ```bash
 npm install
+npm run dev
 ```
 
-### Environment Setup
-
-Create a `.env` file in the root directory with your Qase API token:
+Requires a `.env` file with your Qase API token:
 
 ```env
 QASE_API_TOKEN=your_token_here
 ```
-
-**Important**: The `.env` file is already in `.gitignore` to keep your token secure. Never commit your API token to version control.
-
-### Development
-
-The project uses a proxy server to avoid CORS issues with the Qase API. Run:
-
-```bash
-npm run dev
-```
-
-This will start:
-
-- **Backend proxy server** on `http://localhost:3001`
-- **Frontend development server** on `http://localhost:5173`
-
-The dashboard will be available at `http://localhost:5173`
-
-### Build
-
-```bash
-npm run build
-```
-
-This creates a `dist` folder with static files.
-
-## Configuration
-
-The dashboard is configured to use:
-
-- **Project Code**: PAS
-
-By default, the dashboard loads test cases from the configured root suite group (ID: 9) and its children (matching `https://app.qase.io/project/PAS?suite=9`). You can filter by specific test suites using the dropdown filter in the dashboard.
-
-## Features
-
-- **Total Tests**: Count of all test cases in selected suites
-- **Automation Rate**: Percentage of automated tests
-- **Distribution Charts**: Visual breakdowns by:
-  - Status (Actual, Draft, Deprecated)
-  - Priority (Critical, High, Medium, Low, Trivial)
-  - Severity (Critical, Major, Normal, Minor, Trivial)
-  - Type (Functional, Integration, UI/UX, API, Performance, Security, Smoke, Regression)
-- **Test Case List**: Expandable list of test cases grouped by suite, with detailed step information
-
-## Color Scheme
-
-The dashboard uses the Dracula color palette:
-
-- Background: `#282A36`
-- Foreground: `#F8F8F2`
-- Cyan: `#8BE9FD`
-- Green: `#50FA7B`
-- Orange: `#FFB86C`
-- Pink: `#FF79C6`
-- Purple: `#BD93F9`
-- Red: `#FF5555`
-- Yellow: `#F1FA8C`

@@ -5,6 +5,9 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   snapshot:
     runs-on: ubuntu-latest
@@ -21,3 +24,6 @@ jobs:
           WORKER_URL: ${{ secrets.WORKER_URL }}
           SNAPSHOT_SECRET: ${{ secrets.SNAPSHOT_SECRET }}
         run: node scripts/snapshot.mjs
+
+      - name: Keep workflow alive
+        uses: gautamkrishnar/keepalive-workflow@v2

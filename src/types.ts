@@ -97,14 +97,6 @@ export interface TestRun {
   tags?: { title: string }[];
 }
 
-export interface SuiteTestCounts {
-  date: string;
-  suiteId: string;
-  total: number;
-  automated: number;
-  manual: number;
-}
-
 export interface TestResult {
   hash: string;
   case_id: number;

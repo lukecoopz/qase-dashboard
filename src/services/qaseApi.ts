@@ -8,7 +8,6 @@ import type {
   QaseProject,
   TestRun,
   TestResult,
-  SuiteTestCounts,
 } from "../types";
 
 const QASE_API_BASE = "https://qase-dashboard.lukecoopz.workers.dev";
@@ -351,24 +350,4 @@ export async function getTestCaseDetail(
     console.error(`Error fetching test case ${caseId}:`, error);
     return null;
   }
-}
-
-export async function getSnapshotCounts(
-  projectCode: string,
-  suiteId: number | string,
-  date: string
-): Promise<SuiteTestCounts | null> {
-  const res = await fetch(
-    `${QASE_API_BASE}/snapshot/${projectCode}?suite_id=${suiteId}&date=${date}`
-  );
-  if (!res.ok) return null;
-
-  const data = await res.json();
-  return {
-    date: data.snapshot_date,
-    suiteId: data.suite_id,
-    total: data.total,
-    automated: data.automated,
-    manual: data.manual,
-  };
 }

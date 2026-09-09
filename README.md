@@ -1,6 +1,7 @@
 # Qase Dashboard
 
 A dashboard for viewing test case statistics from [Qase.io](https://qase.io), deployed on GitHub Pages with a Cloudflare Worker + D1 backend.
+Something new.
 
 ## Features
 
